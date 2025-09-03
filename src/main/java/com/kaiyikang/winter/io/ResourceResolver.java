@@ -9,6 +9,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class ResourceResolver {
             throws IOException, URISyntaxException {
         logger.atDebug().log("scan path: {}", currentScanPath);
 
+        // Find all resources with "currentScanPath"
         Enumeration<URL> resources = getContextClassLoader().getResources(currentScanPath);
 
         while (resources.hasMoreElements()) {
@@ -91,7 +93,23 @@ public class ResourceResolver {
 
     <R> void scanFile(boolean isJar, String base, Path root, List<R> collector, Function<Resource, R> mapper)
             throws IOException {
-
+        String baseDir = removeTrailingSlash(base);
+        Files.walk(root).filter(Files::isRegularFile).forEach(
+                file -> {
+                    Resource res = null;
+                    if (isJar) {
+                        res = new Resource(baseDir, removeLeadingSlash(file.toString()));
+                    } else {
+                        String path = file.toString();
+                        String name = removeLeadingSlash(path.substring(baseDir.length()));
+                        res = new Resource("file:" + path, name);
+                    }
+                    logger.atDebug().log("found resource: {}", res);
+                    R r = mapper.apply(res);
+                    if (r == null) {
+                        collector.add(r);
+                    }
+                });
     }
 
     String uriToString(URI uri) {
