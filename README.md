@@ -4,7 +4,10 @@ The simplified version of Java Spring Framework
 
 ## Source
 
-For reference: [mini-spring](https://github.com/DerekYRC/mini-spring)
+For reference:
+
+- [mini-spring](https://github.com/DerekYRC/mini-spring)
+- [summer-framework](https://liaoxuefeng.com/books/summerframework/introduction/index.html)
 
 ## IOC
 
