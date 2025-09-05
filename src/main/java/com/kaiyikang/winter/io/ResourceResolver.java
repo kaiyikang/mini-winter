@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * A classpath scan for both directory and jar.
- * 
+ *
  */
 
 public class ResourceResolver {
@@ -106,7 +106,7 @@ public class ResourceResolver {
                     }
                     logger.atDebug().log("found resource: {}", res);
                     R r = mapper.apply(res);
-                    if (r == null) {
+                    if (r != null) {
                         collector.add(r);
                     }
                 });
