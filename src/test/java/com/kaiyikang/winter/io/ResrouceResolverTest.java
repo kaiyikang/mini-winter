@@ -15,7 +15,33 @@ public class ResrouceResolverTest {
 
     @Test
     public void scanClass() {
+        final var pkg = "com.kaiyikang.scan";
+        final ResourceResolver resolver = new ResourceResolver(pkg);
+        List<String> classes = resolver.scan(
+                res -> {
+                    String name = res.name();
+                    if (name.endsWith(".class")) {
+                        return name.substring(0, name.length() - 6).replace("/", ".").replace("\\",
+                                ".");
 
+                    }
+                    return null;
+                });
+
+        Collections.sort(classes);
+        final String[] listClasses = new String[] {
+                "com.kaiyikang.scan.convert.ValueConverterBean",
+                "com.kaiyikang.scan.destroy.AnnotationDestroyBean",
+                "com.kaiyikang.scan.init.SpecifyInitConfiguration",
+                "com.kaiyikang.scan.proxy.OriginBean",
+                "com.kaiyikang.scan.proxy.FirstProxyBeanPostProcessor",
+                "com.kaiyikang.scan.proxy.SecondProxyBeanPostProcessor",
+                "com.kaiyikang.scan.nested.OuterBean",
+                "com.kaiyikang.scan.nested.OuterBean$NestedBean",
+        };
+        for (String clazz : listClasses) {
+            assertTrue(classes.contains(clazz), () -> "Not contains " + clazz);
+        }
     }
 
     @Test

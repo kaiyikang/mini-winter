@@ -14,3 +14,5 @@ For reference:
 ### Load Classes
 
 We need to load all the classes first before we can go into the container.
+
+In unit tests, compiled test classes end up under the test classpath (e.g., Maven: target/test-classes/com/kaiyikang/scan/\*), and resources are copied to the same classpath root with the same package layout (e.g., target/test-classes/com/kaiyikang/scan/sub1.txt).
