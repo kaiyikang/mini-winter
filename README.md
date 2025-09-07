@@ -19,6 +19,10 @@ In unit tests, compiled test classes end up under the test classpath (e.g., Mave
 
 ### Property Resolver
 
+## Thinking
+
+1. Read the class or method before writing it, thinking about its functionalities and how it is written.
+
 ## Timeline
 
 2025.09.05 ResourceResolver Done
