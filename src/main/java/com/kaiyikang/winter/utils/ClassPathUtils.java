@@ -18,7 +18,7 @@ public class ClassPathUtils {
             if (input == null) {
                 throw new FileNotFoundException("File not found in classpath: " + path);
             }
-            return InputStreamCallback.doWithInputStream(input);
+            return callback.doWithInputStream(input);
         } catch (IOException e) {
             e.printStackTrace();
             throw new UncheckedIOException(e);
