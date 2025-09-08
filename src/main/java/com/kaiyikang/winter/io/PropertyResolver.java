@@ -169,7 +169,7 @@ public class PropertyResolver {
         } else {
             // ${key:default}
             String k = notEmpty(key.substring(2, n));
-            return new PropertyExpr(k, k.substring(n + 1, key.length() - 1));
+            return new PropertyExpr(k, key.substring(n + 1, key.length() - 1));
         }
 
     }
