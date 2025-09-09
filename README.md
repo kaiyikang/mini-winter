@@ -25,6 +25,14 @@ First, the core `public String getProperty(String key)` method is called. If the
 
 The specific design is quite ingenious. For details, please refer to `PropertyResolver.getProperty()`.
 
+### BeanDefinition
+
+BeanDefinition 是一个专门的类，用来存放一个 Bean 的所有元数据（描述信息）。
+
+带 @Component 注解的类，这种 Bean 最直接，类本身就是定义。对于@Configuration 类中带 @Bean 注解的方法本身负责创建 Bean。
+
+注意 beanClass 字段存放的是 Bean 的声明类型，而不是实际类型。记录声明类型就够了，因为这对依赖注入和类型查找至关重要。至于实际类型，等创建了实例 instance 之后，可通过 instance.getClass() 获得。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
