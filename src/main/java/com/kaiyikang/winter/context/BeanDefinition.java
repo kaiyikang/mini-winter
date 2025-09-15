@@ -2,7 +2,10 @@ package com.kaiyikang.winter.context;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Objects;
+
+import com.kaiyikang.winter.exception.BeanCreationException;
 
 import jakarta.annotation.Nullable;
 
@@ -135,21 +138,46 @@ public class BeanDefinition implements Comparable<BeanDefinition> {
 
     public Object getRequiredInstance() {
         if (this.instance == null) {
-            // TODO
+            throw new BeanCreationException(String.format(
+                    "Instance of bean with name '%s' and type '%s' is not instantiated during current stage.",
+                    this.getName(), this.getBeanClass().getName()));
         }
         return this.instance;
+
     }
 
     public void setInstance(Object instance) {
         Objects.requireNonNull(instance, "Bean instance is null.");
         if (!this.beanClass.isAssignableFrom(instance.getClass())) {
-            // TODO
+            throw new BeanCreationException(String.format("Instance '%s' of Bean '%s' is not the expected type: %s",
+                    instance, instance.getClass().getName(),
+                    this.beanClass.getName()));
         }
         this.instance = instance;
     }
 
     public boolean isPrimary() {
         return this.primary;
+    }
+
+    @Override
+    public String toString() {
+        return "BeanDefinition [name=" + name + ", beanClass=" + beanClass.getName() + ", factory=" + getCreateDetail()
+                + ", init-method="
+                + (initMethod == null ? "null" : initMethod.getName()) + ", destroy-method="
+                + (destroyMethod == null ? "null" : destroyMethod.getName())
+                + ", primary=" + primary + ", instance=" + instance + "]";
+    }
+
+    String getCreateDetail() {
+        if (this.factoryMethod != null) {
+            String params = String.join(", ",
+                    Arrays.stream(this.factoryMethod.getParameterTypes()).map(t -> t.getSimpleName())
+                            .toArray(String[]::new));
+            return this.factoryMethod.getDeclaringClass().getSimpleName() + "." + this.factoryMethod.getName() + "("
+                    + params + ")";
+        }
+        return null;
     }
 
     @Override
