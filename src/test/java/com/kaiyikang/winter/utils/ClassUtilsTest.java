@@ -2,12 +2,15 @@ package com.kaiyikang.winter.utils;
 
 import org.junit.jupiter.api.Test;
 
+import com.kaiyikang.winter.annotation.Bean;
 import com.kaiyikang.winter.annotation.Component;
 import com.kaiyikang.winter.annotation.Configuration;
 import com.kaiyikang.winter.annotation.Order;
 import com.kaiyikang.winter.exception.BeanDefinitionException;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.lang.reflect.Method;
 
 public class ClassUtilsTest {
 
@@ -55,6 +58,27 @@ public class ClassUtilsTest {
             ClassUtils.findAnnotation(DuplicateComponent2.class, Component.class);
         });
     }
+
+    @Test
+    public void testWhenMethodHasNoBeanAnnotation() throws NoSuchMethodException {
+        Method method = TestBeanConfiguration.class.getMethod("methodWithoutBeanAnnotation");
+        String beanName = ClassUtils.getBeanName(method);
+        assertEquals("methodWithoutBeanAnnotation", beanName);
+    }
+
+    @Test
+    public void testWhenMethodHasBeanAnnotationWithEmptyValue() throws NoSuchMethodException {
+        Method method = TestBeanConfiguration.class.getMethod("methodWithBeanAnnotationButEmptyValue");
+        String beanName = ClassUtils.getBeanName(method);
+        assertEquals("methodWithBeanAnnotationButEmptyValue", beanName);
+    }
+
+    @Test
+    void testWhenMethodHasBeanAnnotationWithValue() throws NoSuchMethodException {
+        Method method = TestBeanConfiguration.class.getMethod("methodWithBeanAnnotationAndValue");
+        String beanName = ClassUtils.getBeanName(method);
+        assertEquals("customBeanName", beanName);
+    }
 }
 
 @Order(1)
@@ -93,4 +117,21 @@ class DuplicateComponent {
 @CustomComponent
 @Configuration
 class DuplicateComponent2 {
+}
+
+class TestBeanConfiguration {
+
+    public String methodWithoutBeanAnnotation() {
+        return "method1";
+    }
+
+    @Bean
+    public String methodWithBeanAnnotationButEmptyValue() {
+        return "method2";
+    }
+
+    @Bean("customBeanName")
+    public String methodWithBeanAnnotationAndValue() {
+        return "method3";
+    }
 }
