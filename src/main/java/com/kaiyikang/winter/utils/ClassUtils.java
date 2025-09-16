@@ -73,12 +73,26 @@ public class ClassUtils {
     }
 
     public static String getBeanName(Class<?> clazz) {
-        Component component = findAnnotation(clazz, Component.class);
 
-        if (component != null && !component.value().isEmpty()) {
-            return component.value();
+        // Load from @Component directly
+        Component directComponent = findAnnotation(clazz, Component.class);
+        if (directComponent != null && !directComponent.value().isEmpty()) {
+            return directComponent.value();
         }
 
+        // Load annotation is not @Component
+        for (Annotation anno : clazz.getAnnotations()) {
+            try {
+                String nameFromComposed = (String) anno.annotationType().getMethod("value").invoke(anno);
+                if (nameFromComposed != null && !nameFromComposed.isEmpty()) {
+                    return nameFromComposed;
+                }
+            } catch (NoSuchMethodException e) {
+            } catch (ReflectiveOperationException e) {
+                throw new BeanDefinitionException("Cannot get annotation value.", e);
+            }
+        }
+        // Default name as fallback
         String name = clazz.getSimpleName();
         return Character.toLowerCase(name.charAt(0)) + name.substring(1);
     }
