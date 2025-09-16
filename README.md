@@ -33,6 +33,8 @@ BeanDefinition 是一个专门的类，用来存放一个 Bean 的所有元数�
 
 注意 beanClass 字段存放的是 Bean 的声明类型，而不是实际类型。记录声明类型就够了，因为这对依赖注入和类型查找至关重要。至于实际类型，等创建了实例 instance 之后，可通过 instance.getClass() 获得。
 
+尤其是在 bean 加载和初始化的部分，源码这里的 fail-fast 和 pre-condition validation 做的不够好，这里进行了改进和微小的重构。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
