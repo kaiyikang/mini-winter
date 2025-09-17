@@ -27,13 +27,18 @@ The specific design is quite ingenious. For details, please refer to `PropertyRe
 
 ### BeanDefinition
 
-BeanDefinition 是一个专门的类，用来存放一个 Bean 的所有元数据（描述信息）。
+A `BeanDefinition` is a core class designed to hold all metadata for a Bean, such as its class name, scope, and lifecycle callbacks.
 
-带 @Component 注解的类，这种 Bean 最直接，类本身就是定义。对于@Configuration 类中带 @Bean 注解的方法本身负责创建 Bean。
+Beans are primarily defined in two ways:
 
-注意 beanClass 字段存放的是 Bean 的声明类型，而不是实际类型。记录声明类型就够了，因为这对依赖注入和类型查找至关重要。至于实际类型，等创建了实例 instance 之后，可通过 instance.getClass() 获得。
+1.  **Class-based Beans**: When a class is annotated with a stereotype like `@Component`, the class itself serves as the Bean's definition.
+2.  **Factory-method Beans**: In a `@Configuration` class, methods annotated with `@Bean` act as factories to create Beans.
 
-尤其是在 bean 加载和初始化的部分，源码这里的 fail-fast 和 pre-condition validation 做的不够好，这里进行了改进和微小的重构。
+Notably, the `beanClass` field in a `BeanDefinition` stores the Bean's **declared type** (e.g., an interface), not its actual runtime type (e.g., the implementation class). This declared type is crucial for dependency injection and type lookups, while the actual type can only be determined via `instance.getClass()` after creation.
+
+During the development of the Bean loading and initialization logic, a strong emphasis was placed on robustness. The pre-condition validation was enhanced with a **fail-fast** strategy to catch configuration errors early, preventing hard-to-diagnose `NullPointerExceptions` at runtime.
+
+The purpose of the `AnnotationConfigApplicationContext` is to scan for and collect all classes with valid annotations, create corresponding `BeanDefinition`s, and organize them into an internal registry (a Map) indexed by bean name. It then uses this registry to locate and serve Bean instances upon request.
 
 ## Thinking
 
@@ -43,3 +48,4 @@ BeanDefinition 是一个专门的类，用来存放一个 Bean 的所有元数�
 
 2025.09.05 ResourceResolver Done
 2025.09.09 PropertyResolver Done
+2025.09.17 BeanDefinition Done
