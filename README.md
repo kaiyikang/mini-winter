@@ -40,6 +40,15 @@ During the development of the Bean loading and initialization logic, a strong em
 
 The purpose of the `AnnotationConfigApplicationContext` is to scan for and collect all classes with valid annotations, create corresponding `BeanDefinition`s, and organize them into an internal registry (a Map) indexed by bean name. It then uses this registry to locate and serve Bean instances upon request.
 
+### BeanInstance
+
+强依赖，即通过构造方法和工厂方法注入的依赖，绝对不能包含循环以来，出现则应报错。弱依赖，则可以通过先实例化，再注入的方式实现。所以，创建 Bean 的过程分成两步：
+
+1. 创建 Bean 实例，此时必须强依赖
+2. 对 Bean 实例，使用 Setter 方法注入和字段注入。
+
+名字上的区分，get 一定会返回值，find 则可能返回 null. 详细可以参考 getBean 和 findBean。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.

@@ -1,5 +1,6 @@
 package com.kaiyikang.winter.context;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Properties;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.kaiyikang.imported.LocalDateConfiguration;
@@ -15,6 +17,7 @@ import com.kaiyikang.scan.ScanApplication;
 import com.kaiyikang.scan.custom.annotation.CustomAnnotationBean;
 import com.kaiyikang.scan.nested.OuterBean;
 import com.kaiyikang.scan.nested.OuterBean.NestedBean;
+import com.kaiyikang.scan.primary.CatBean;
 import com.kaiyikang.scan.primary.PersonBean;
 import com.kaiyikang.scan.primary.StudentBean;
 import com.kaiyikang.scan.primary.TeacherBean;
@@ -22,25 +25,50 @@ import com.kaiyikang.winter.io.PropertyResolver;
 
 public class AnnotationConfigApplicationContextTest {
 
-    @Test
-    public void testAnnotationConfigApplicationContext() {
-        var ctx = new AnnotationConfigApplicationContext(ScanApplication.class, createPropertyResolver());
+    AnnotationConfigApplicationContext ctx;
 
+    @BeforeEach
+    void setup() {
+        ctx = new AnnotationConfigApplicationContext(ScanApplication.class,
+                createPropertyResolver());
+    }
+
+    @Test
+    public void customAnnotationBean() {
         // Find @CustomAnnotation
         assertNotNull(ctx.findBeanDefinition(CustomAnnotationBean.class));
         assertNotNull(ctx.findBeanDefinition("customAnnotation"));
+        assertNotNull(ctx.getBean(CustomAnnotationBean.class));
+        assertNotNull(ctx.getBean("customAnnotation"));
+    }
 
+    @Test
+    public void importedBean() {
         // Find imported components
         assertNotNull(ctx.findBeanDefinition(LocalDateConfiguration.class));
         assertNotNull(ctx.findBeanDefinition("startLocalDate"));
         assertNotNull(ctx.findBeanDefinition("startLocalDateTime"));
         assertNotNull(ctx.findBeanDefinition(ZonedDateConfiguration.class));
         assertNotNull(ctx.findBeanDefinition("startZonedDateTime"));
+        assertNotNull(ctx.getBean(LocalDateConfiguration.class));
+        assertNotNull(ctx.getBean("startLocalDate"));
+        assertNotNull(ctx.getBean("startLocalDateTime"));
+        assertNotNull(ctx.getBean(ZonedDateConfiguration.class));
+        assertNotNull(ctx.getBean("startZonedDateTime"));
 
+    }
+
+    @Test
+    public void NestedBean() {
         // Find nested component
         assertNotNull(ctx.findBeanDefinition(OuterBean.class));
         assertNotNull(ctx.findBeanDefinition(NestedBean.class));
+        ctx.getBean(OuterBean.class);
+        ctx.getBean(NestedBean.class);
+    }
 
+    @Test
+    public void findBeanDefinition_findComponentWithPrimary() {
         // Primary order
         BeanDefinition studentDef = ctx.findBeanDefinition(StudentBean.class);
         BeanDefinition teacherDef = ctx.findBeanDefinition(TeacherBean.class);
@@ -53,6 +81,14 @@ public class AnnotationConfigApplicationContextTest {
         // Find primary only
         BeanDefinition personPrimaryDef = ctx.findBeanDefinition(PersonBean.class);
         assertSame(teacherDef, personPrimaryDef);
+
+        var cat = ctx.getBean(CatBean.class);
+        assertEquals("Mimi", cat.type);
+    }
+
+    @Test
+    public void testAnnotationConfigApplicationContext() {
+
     }
 
     PropertyResolver createPropertyResolver() {
