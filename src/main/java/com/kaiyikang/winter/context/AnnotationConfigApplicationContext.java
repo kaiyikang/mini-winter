@@ -60,7 +60,7 @@ public class AnnotationConfigApplicationContext {
         // Beans are saved in this scope.
         ComponentScan scan = ClassUtils.findAnnotation(configClass, ComponentScan.class);
         final String[] scanPackages = scan == null || scan.value().length == 0
-                ? new String[] { Config.class.getPackage().getName() }
+                ? new String[] { configClass.getPackage().getName() }
                 : scan.value();
         logger.atInfo().log("component scan in packages: {}", Arrays.toString(scanPackages));
 

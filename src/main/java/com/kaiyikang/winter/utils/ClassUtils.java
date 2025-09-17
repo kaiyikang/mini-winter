@@ -109,7 +109,7 @@ public class ClassUtils {
                                     "Method '%s' with @%s must not have argument: %s",
                                     method.getName(), targetAnnotation.getSimpleName(), clazz.getName()));
                 }
-                // Verify the number of parameters
+                //
                 if (foundedMethod != null) {
                     throw new BeanDefinitionException(String.format(
                             "Multiple methods with @%s found in class: %s",

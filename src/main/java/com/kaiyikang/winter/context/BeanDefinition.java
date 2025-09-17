@@ -82,7 +82,7 @@ public class BeanDefinition implements Comparable<BeanDefinition> {
             initMethod.setAccessible(true);
         }
         if (destroyMethod != null) {
-            initMethod.setAccessible(true);
+            destroyMethod.setAccessible(true);
         }
         this.initMethod = initMethod;
         this.destroyMethod = destroyMethod;
