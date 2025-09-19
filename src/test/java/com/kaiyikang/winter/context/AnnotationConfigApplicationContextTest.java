@@ -15,6 +15,8 @@ import com.kaiyikang.imported.LocalDateConfiguration;
 import com.kaiyikang.imported.ZonedDateConfiguration;
 import com.kaiyikang.scan.ScanApplication;
 import com.kaiyikang.scan.custom.annotation.CustomAnnotationBean;
+import com.kaiyikang.scan.init.AnnotationInitBean;
+import com.kaiyikang.scan.init.SpecifyInitBean;
 import com.kaiyikang.scan.nested.OuterBean;
 import com.kaiyikang.scan.nested.OuterBean.NestedBean;
 import com.kaiyikang.scan.primary.CatBean;
@@ -40,6 +42,18 @@ public class AnnotationConfigApplicationContextTest {
         assertNotNull(ctx.findBeanDefinition("customAnnotation"));
         assertNotNull(ctx.getBean(CustomAnnotationBean.class));
         assertNotNull(ctx.getBean("customAnnotation"));
+    }
+
+    @Test
+    public void initMethod() {
+
+        // Test @PostConstruct
+        var bean1 = ctx.getBean(AnnotationInitBean.class);
+        assertEquals("Scan App / v1.0", bean1.appName);
+
+        // Test
+        var bean2 = ctx.getBean(SpecifyInitBean.class);
+        assertEquals("Scan App / v1.0", bean2.appName);
     }
 
     @Test

@@ -42,12 +42,16 @@ The purpose of the `AnnotationConfigApplicationContext` is to scan for and colle
 
 ### BeanInstance
 
-强依赖，即通过构造方法和工厂方法注入的依赖，绝对不能包含循环以来，出现则应报错。弱依赖，则可以通过先实例化，再注入的方式实现。所以，创建 Bean 的过程分成两步：
+**Strong dependencies**, those supplied through constructor or factory method injection, cannot have circular references. The container must throw an error if such a dependency loop is found. In contrast, **weak dependencies** allow for circular references by separating instantiation from property injection.
 
-1. 创建 Bean 实例，此时必须强依赖
-2. 对 Bean 实例，使用 Setter 方法注入和字段注入。
+This leads to a two-phase bean creation process:
 
-名字上的区分，get 一定会返回值，find 则可能返回 null. 详细可以参考 getBean 和 findBean。
+1.  **Instantiation:** The bean instance is created by invoking its constructor, which resolves all strong dependencies.
+2.  **Population:** The instance is then populated with weak dependencies through setter and field injection.
+
+Regarding API naming conventions: `get` methods are expected to always return an object (or throw an exception), whereas `find` methods may return `null` if the object is not found. See `getBean` and `findBean` for a practical example.
+
+For an implementation detail on weak dependencies, consider the `tryInjectProperties` method. It takes the target `bean` instance and an `acc` object (representing the field or method to be injected). The process involves making the member accessible via `setAccessible(true)`, resolving the dependency bean that needs to be injected, and finally, using reflection to set the field's value or invoke the setter method with the resolved dependency.
 
 ## Thinking
 
@@ -58,3 +62,4 @@ The purpose of the `AnnotationConfigApplicationContext` is to scan for and colle
 2025.09.05 ResourceResolver Done
 2025.09.09 PropertyResolver Done
 2025.09.17 BeanDefinition Done
+2025.09.19 Create BeanInstance Done
