@@ -2,6 +2,7 @@ package com.kaiyikang.winter.context;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,6 +24,10 @@ import com.kaiyikang.scan.primary.CatBean;
 import com.kaiyikang.scan.primary.PersonBean;
 import com.kaiyikang.scan.primary.StudentBean;
 import com.kaiyikang.scan.primary.TeacherBean;
+import com.kaiyikang.scan.proxy.InjectProxyOnConstructorBean;
+import com.kaiyikang.scan.proxy.InjectProxyOnPropertyBean;
+import com.kaiyikang.scan.proxy.OriginBean;
+import com.kaiyikang.scan.proxy.SecondProxyBean;
 import com.kaiyikang.winter.io.PropertyResolver;
 
 public class AnnotationConfigApplicationContextTest {
@@ -33,6 +38,23 @@ public class AnnotationConfigApplicationContextTest {
     void setup() {
         ctx = new AnnotationConfigApplicationContext(ScanApplication.class,
                 createPropertyResolver());
+    }
+
+    @Test
+    public void proxyBean() {
+        // Should be proxy instead of origin
+        OriginBean proxy = ctx.getBean(OriginBean.class);
+        assertSame(SecondProxyBean.class, proxy.getClass());
+        assertEquals("Scan App", proxy.getName());
+        assertEquals("v1.0", proxy.getVersion());
+
+        assertNull(proxy.name);
+        assertNull(proxy.version);
+
+        var inject1 = ctx.getBean(InjectProxyOnPropertyBean.class);
+        var inject2 = ctx.getBean(InjectProxyOnConstructorBean.class);
+        assertSame(proxy, inject1.injected);
+        assertEquals(proxy, inject2.injected);
     }
 
     @Test
@@ -98,11 +120,6 @@ public class AnnotationConfigApplicationContextTest {
 
         var cat = ctx.getBean(CatBean.class);
         assertEquals("Mimi", cat.type);
-    }
-
-    @Test
-    public void testAnnotationConfigApplicationContext() {
-
     }
 
     PropertyResolver createPropertyResolver() {

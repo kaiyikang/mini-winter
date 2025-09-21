@@ -53,6 +53,29 @@ Regarding API naming conventions: `get` methods are expected to always return an
 
 For an implementation detail on weak dependencies, consider the `tryInjectProperties` method. It takes the target `bean` instance and an `acc` object (representing the field or method to be injected). The process involves making the member accessible via `setAccessible(true)`, resolving the dependency bean that needs to be injected, and finally, using reflection to set the field's value or invoke the setter method with the resolved dependency.
 
+### BeanPostProcessor
+
+当前的流程是：
+
+1. 创建 bean definition
+2. 根据 definition，创建 instance
+3. 为这个 instance， 注入其他的 instance
+4. 准备好完整的 bean
+
+新的需求是，如果要替换 Bean，或为已经实例化的 Bean 添加新的逻辑，则需要用到 BeanPostProcessor。它发生在第二步和第三步。
+
+第二步可以创建 BeanProxy 并且交还给工厂，以替换原来的 Bean。第三步有两点值得注意：
+
+1. 比如 Controller 要注入 Bean，则应该注入 BeanProxy，而不是原始 Bean
+2. 如果这个 Bean 要注入其他依赖，是注入原始 Bean，还是 BeanProxy，答案应该是原始 Bean，因为真正在做操作的时候，是原始 Bean 在做。
+
+总结下来是：
+
+- 谁依赖我，就要暴露代理对象。
+- 我依赖谁，就要把依赖注入原始对象。
+
+在解决第二个问题时，可以在 BeanPostProcessor 拓展出一个新的方法，以确保在给 Bean 注入属性时，返回原始的 Bean 进行注入。并且在使用属性时，永远使用 getter，而不是直接访问字段，因为注入发生在原始 Bean 上。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
