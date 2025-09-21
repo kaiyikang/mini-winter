@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.kaiyikang.winter.annotation.Component;
 import com.kaiyikang.winter.annotation.Order;
+import com.kaiyikang.winter.context.BeanPostProcessor;
 
 @Order(100)
 @Component
