@@ -1,6 +1,5 @@
 package com.kaiyikang.winter.context;
 
-import java.io.ObjectInputFilter.Config;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
@@ -12,6 +11,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,6 +51,7 @@ public class AnnotationConfigApplicationContext {
     protected final PropertyResolver propertyResolver;
     protected final Map<String, BeanDefinition> beans;
 
+    private List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
     private Set<String> creatingBeanNames;
 
     public AnnotationConfigApplicationContext(Class<?> configClass, PropertyResolver propertyResolver) {
@@ -72,14 +73,17 @@ public class AnnotationConfigApplicationContext {
                     return def.getName();
                 }).toList();
 
+        // Create BeanPostProcessor Bean
+        List<BeanPostProcessor> processors = this.beans.values().stream()
+                .filter(this::isBeanPostProcessorDefinition)
+                .sorted()
+                .map(def -> {
+                    return (BeanPostProcessor) createBeanAsEarlySingleton(def);
+                }).toList();
+        this.beanPostProcessors.addAll(processors);
+
         // Instance other normal beans
         createNormalBeans();
-
-        if (logger.isDebugEnabled()) {
-            this.beans.values().stream().sorted().forEach(def -> {
-                logger.debug("bean initialized: {}", def);
-            });
-        }
 
         // Inject dependency by field and setter
         this.beans.values().forEach(def -> {
@@ -90,6 +94,12 @@ public class AnnotationConfigApplicationContext {
         this.beans.values().forEach(def -> {
             initBean(def);
         });
+
+        if (logger.isDebugEnabled()) {
+            this.beans.values().stream().sorted().forEach(def -> {
+                logger.debug("bean initialized: {}", def);
+            });
+        }
 
         // Clean up
         this.creatingBeanNames = null;
@@ -201,6 +211,10 @@ public class AnnotationConfigApplicationContext {
 
             Configuration configuration = ClassUtils.findAnnotation(clazz, Configuration.class);
             if (configuration != null) {
+                if (BeanPostProcessor.class.isAssignableFrom(clazz)) {
+                    throw new BeanDefinitionException(
+                            "@Configuration class '" + clazz.getName() + "' cannot be BeanPostProcessor.");
+                }
                 scanFactoryMethods(beanName, clazz, definitions);
             }
         }
@@ -426,6 +440,12 @@ public class AnnotationConfigApplicationContext {
                         String.format("Cannot specify @Autowired when create @Configuration bean '%s': %s.",
                                 def.getName(), def.getBeanClass().getName()));
             }
+            final boolean isBeanPostProcessor = isBeanPostProcessorDefinition(def);
+            if (isBeanPostProcessor && autowired != null) {
+                throw new BeanCreationException(
+                        String.format("Cannot specify @Autowired when create BeanPostProcessor '%s': %s.",
+                                def.getName(), def.getBeanClass().getName()));
+            }
             if (value != null && autowired != null) {
                 throw new BeanCreationException(
                         String.format("Cannot specify both @Autowired and @Value when create bean '%s': %s.",
@@ -465,12 +485,11 @@ public class AnnotationConfigApplicationContext {
 
                 // Find the dependency
                 Object autowiredBeanInstance = dependsOnDef.getInstance();
-                if (autowiredBeanInstance == null && !isConfiguration) {
+                if (autowiredBeanInstance == null && !isConfiguration && !isBeanPostProcessor) {
                     autowiredBeanInstance = createBeanAsEarlySingleton(dependsOnDef);
                 }
                 args[i] = autowiredBeanInstance;
             }
-
         }
 
         // -- 4. Create Bean Instance --
@@ -495,8 +514,23 @@ public class AnnotationConfigApplicationContext {
             }
         }
 
-        // --- 5. Save and return ---
+        // --- 5. Save ---
         def.setInstance(instance);
+
+        // --- 6. BeanPostProcessor handle bean ---
+        for (BeanPostProcessor processor : beanPostProcessors) {
+            Object processed = processor.postProcessBeforeInitialization(def.getInstance(), def.getName());
+            if (processed == null) {
+                throw new BeanCreationException(String.format(
+                        "PostBeanProcessor returns null when process bean '%s' by %s", def.getName(), processor));
+            }
+            // Update the ref of the bean if the origin bean is replaced
+            if (def.getInstance() != processed) {
+                logger.atDebug().log("Bean '{}' was replaced by post processor {}.", def.getName(),
+                        processor.getClass().getName());
+                def.setInstance(processed);
+            }
+        }
 
         return def.getInstance();
     }
@@ -583,15 +617,31 @@ public class AnnotationConfigApplicationContext {
      * Inject Bean without init calling
      */
     void injectBean(BeanDefinition def) {
+
+        final Object originBeanInstance = getOriginInstance(def);
         try {
-            injectProperties(def, def.getBeanClass(), def.getInstance());
+            injectProperties(def, def.getBeanClass(), originBeanInstance);
         } catch (ReflectiveOperationException e) {
             throw new BeanCreationException(e);
         }
     }
 
     void initBean(BeanDefinition def) {
-        callMethod(def.getInstance(), def.getInitMethod(), def.getInitMethodName());
+        final Object beanInstance = getOriginInstance(def);
+
+        // call init method
+        callMethod(beanInstance, def.getInitMethod(), def.getInitMethodName());
+
+        beanPostProcessors.forEach(beanPostProcessor -> {
+            Object processedInstance = beanPostProcessor.postProcessAfterInitialization(def.getInstance(),
+                    def.getName());
+            if (processedInstance != def.getInstance()) {
+                logger.atDebug().log("BeanPostProcessor {} return different bean from {} to {}.",
+                        beanPostProcessor.getClass().getSimpleName(),
+                        def.getInstance().getClass().getName(), processedInstance.getClass().getName());
+                def.setInstance(processedInstance);
+            }
+        });
     }
 
     private void injectProperties(BeanDefinition def, Class<?> clazz, Object bean) throws ReflectiveOperationException {
@@ -697,7 +747,7 @@ public class AnnotationConfigApplicationContext {
                     field.set(bean, depends);
                 }
                 if (method != null) {
-                    logger.atDebug().log("Mield injection: {}.{} ({})",
+                    logger.atDebug().log("Method injection: {}.{} ({})",
                             def.getBeanClass().getName(), accessibleName,
                             depends);
                     method.invoke(bean, depends);
@@ -706,6 +756,15 @@ public class AnnotationConfigApplicationContext {
         }
     }
 
+    /**
+     * Inject the bean
+     * 
+     * @param def   deprecated
+     * @param clazz for logging
+     * @param bean  need the dependencies
+     * @param acc   is the dependency
+     * @throws ReflectiveOperationException
+     */
     void tryInjectProperties(BeanDefinition def, Class<?> clazz, Object bean,
             AccessibleObject acc)
             throws ReflectiveOperationException {
@@ -811,5 +870,32 @@ public class AnnotationConfigApplicationContext {
                 throw new BeanCreationException(e);
             }
         }
+    }
+
+    // BeanPostProcessor
+    // -----------------
+    boolean isBeanPostProcessorDefinition(BeanDefinition def) {
+        return BeanPostProcessor.class.isAssignableFrom(def.getBeanClass());
+    }
+
+    /**
+     * Get origin instance
+     */
+    private Object getOriginInstance(BeanDefinition def) {
+        Object beanInstance = def.getInstance();
+
+        // find the origin bean
+        List<BeanPostProcessor> reversedBeanPostProcessors = new ArrayList<>(this.beanPostProcessors);
+        Collections.reverse(reversedBeanPostProcessors);
+        for (BeanPostProcessor processor : reversedBeanPostProcessors) {
+            Object restoredInstance = processor.postProcessOnSetProperty(beanInstance, def.getName());
+            if (restoredInstance != beanInstance) {
+                logger.atDebug().log("BeanPostProcessor {} specified injection from {} to {}.",
+                        processor.getClass().getSimpleName(),
+                        beanInstance.getClass().getSimpleName(), restoredInstance.getClass().getSimpleName());
+                beanInstance = restoredInstance;
+            }
+        }
+        return beanInstance;
     }
 }
