@@ -90,6 +90,10 @@ target = FirstProxyBean@96
 version = null
 ```
 
+## Finish IOC
+
+Finish interface.
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
@@ -100,4 +104,5 @@ version = null
 2025.09.09 PropertyResolver Done
 2025.09.17 BeanDefinition Done
 2025.09.19 Create BeanInstance Done
-2025.09.21 BeanPostProcessor Done
+2025.09.24 BeanPostProcessor Done
+2025.09.24 IOC Done

@@ -17,7 +17,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +44,7 @@ import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
-public class AnnotationConfigApplicationContext {
+public class AnnotationConfigApplicationContext implements ConfigurableApplicationContext {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     protected final PropertyResolver propertyResolver;
@@ -55,6 +54,8 @@ public class AnnotationConfigApplicationContext {
     private Set<String> creatingBeanNames;
 
     public AnnotationConfigApplicationContext(Class<?> configClass, PropertyResolver propertyResolver) {
+        ApplicationContextUtils.setApplicationContext(this);
+
         this.propertyResolver = propertyResolver;
 
         // Scan to obtain the Class type of all Beans
@@ -337,6 +338,7 @@ public class AnnotationConfigApplicationContext {
      * Find Bean by name, return null if not exist
      */
     @Nullable
+    @Override
     public BeanDefinition findBeanDefinition(String name) {
         return this.beans.get(name);
     }
@@ -345,6 +347,7 @@ public class AnnotationConfigApplicationContext {
      * Find Bean by name and type
      */
     @Nullable
+    @Override
     public BeanDefinition findBeanDefinition(String name, Class<?> requiredType) {
         BeanDefinition def = findBeanDefinition(name);
         if (def == null) {
@@ -361,6 +364,7 @@ public class AnnotationConfigApplicationContext {
     /*
      * Find beans by type
      */
+    @Override
     public List<BeanDefinition> findBeanDefinitions(Class<?> type) {
         return this.beans.values().stream().filter(def -> type.isAssignableFrom(def.getBeanClass()))
                 .sorted().toList();
@@ -370,6 +374,7 @@ public class AnnotationConfigApplicationContext {
      * Find bean by type
      */
     @Nullable
+    @Override
     public BeanDefinition findBeanDefinition(Class<?> type) {
         List<BeanDefinition> defs = findBeanDefinitions(type);
         if (defs.isEmpty()) {
@@ -403,7 +408,8 @@ public class AnnotationConfigApplicationContext {
      * This method is recursive; when encountering an uncreated dependency, it first
      * creates that dependency.
      */
-    private Object createBeanAsEarlySingleton(BeanDefinition def) {
+    @Override
+    public Object createBeanAsEarlySingleton(BeanDefinition def) {
         logger.atDebug().log("Try create bean '{}' as early singleton: {}", def.getName(),
                 def.getBeanClass().getName());
 
@@ -547,6 +553,7 @@ public class AnnotationConfigApplicationContext {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T> T getBean(String name) {
         BeanDefinition def = this.beans.get(name);
         if (def == null) {
@@ -556,6 +563,7 @@ public class AnnotationConfigApplicationContext {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T> T getBean(Class<T> requiredType) {
         BeanDefinition def = findBeanDefinition(requiredType);
         if (def == null) {
@@ -564,6 +572,7 @@ public class AnnotationConfigApplicationContext {
         return (T) def.getRequiredInstance();
     }
 
+    @Override
     public <T> T getBean(String name, Class<T> requiredType) {
         T t = findBean(name, requiredType);
         if (t == null) {
@@ -574,10 +583,12 @@ public class AnnotationConfigApplicationContext {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T> List<T> getBeans(Class<T> requiredType) {
         return findBeanDefinitions(requiredType).stream().map(def -> (T) def.getRequiredInstance()).toList();
     }
 
+    @Override
     public boolean containsBean(String name) {
         return this.beans.containsKey(name);
     }
@@ -897,5 +908,21 @@ public class AnnotationConfigApplicationContext {
             }
         }
         return beanInstance;
+    }
+
+    // Other
+    // ----
+
+    @Override
+    public void close() {
+        logger.info("Closing {}...", this.getClass().getName());
+        this.beans.values().forEach(def -> {
+            final Object beanInstance = getOriginInstance(def);
+            callMethod(beanInstance, def.getDestroyMethod(), def.getDestroyMethodName());
+        });
+        this.beans.clear();
+        ;
+        logger.info("{} closed.", this.getClass().getName());
+        ApplicationContextUtils.setApplicationContext(null);
     }
 }

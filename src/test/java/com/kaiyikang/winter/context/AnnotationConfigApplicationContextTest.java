@@ -16,6 +16,8 @@ import com.kaiyikang.imported.LocalDateConfiguration;
 import com.kaiyikang.imported.ZonedDateConfiguration;
 import com.kaiyikang.scan.ScanApplication;
 import com.kaiyikang.scan.custom.annotation.CustomAnnotationBean;
+import com.kaiyikang.scan.destroy.AnnotationDestroyBean;
+import com.kaiyikang.scan.destroy.SpecifyDestroyBean;
 import com.kaiyikang.scan.init.AnnotationInitBean;
 import com.kaiyikang.scan.init.SpecifyInitBean;
 import com.kaiyikang.scan.nested.OuterBean;
@@ -76,6 +78,21 @@ public class AnnotationConfigApplicationContextTest {
         // Test
         var bean2 = ctx.getBean(SpecifyInitBean.class);
         assertEquals("Scan App / v1.0", bean2.appName);
+    }
+
+    @Test
+    public void DestroyMethod() {
+        AnnotationDestroyBean bean1 = null;
+        SpecifyDestroyBean bean2 = null;
+        try (var ctx = new AnnotationConfigApplicationContext(ScanApplication.class, createPropertyResolver())) {
+            // test @PreDestroy:
+            bean1 = ctx.getBean(AnnotationDestroyBean.class);
+            bean2 = ctx.getBean(SpecifyDestroyBean.class);
+            assertEquals("Scan App", bean1.appTitle);
+            assertEquals("Scan App", bean2.appTitle);
+        }
+        assertNull(bean1.appTitle);
+        assertNull(bean2.appTitle);
     }
 
     @Test
