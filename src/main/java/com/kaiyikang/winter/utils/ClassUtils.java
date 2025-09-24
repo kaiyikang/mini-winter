@@ -73,28 +73,30 @@ public class ClassUtils {
     }
 
     public static String getBeanName(Class<?> clazz) {
+        String name = "";
 
-        // Load from @Component directly
-        Component directComponent = findAnnotation(clazz, Component.class);
-        if (directComponent != null && !directComponent.value().isEmpty()) {
-            return directComponent.value();
-        }
-
-        // Load annotation is not @Component
-        for (Annotation anno : clazz.getAnnotations()) {
-            try {
-                String nameFromComposed = (String) anno.annotationType().getMethod("value").invoke(anno);
-                if (nameFromComposed != null && !nameFromComposed.isEmpty()) {
-                    return nameFromComposed;
+        Component component = clazz.getAnnotation(Component.class);
+        if (component != null) {
+            // @Component has value
+            name = component.value();
+        } else {
+            // @Component has no value, find other @Component
+            for (Annotation anno : clazz.getAnnotations()) {
+                if (findAnnotation(anno.annotationType(), Component.class) != null) {
+                    try {
+                        name = (String) anno.annotationType().getMethod("value").invoke(anno);
+                    } catch (ReflectiveOperationException e) {
+                        throw new BeanDefinitionException("Cannot get annotation value.", e);
+                    }
                 }
-            } catch (NoSuchMethodException e) {
-            } catch (ReflectiveOperationException e) {
-                throw new BeanDefinitionException("Cannot get annotation value.", e);
             }
         }
-        // Default name as fallback
-        String name = clazz.getSimpleName();
-        return Character.toLowerCase(name.charAt(0)) + name.substring(1);
+
+        if (name.isEmpty()) {
+            name = clazz.getSimpleName();
+            name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
+        }
+        return name;
     }
 
     @Nullable

@@ -13,6 +13,7 @@ import com.kaiyikang.winter.context.BeanPostProcessor;
 @Order(100)
 @Component
 public class FirstProxyBeanPostProcessor implements BeanPostProcessor {
+
     final Logger logger = LoggerFactory.getLogger(getClass());
 
     Map<String, Object> originBeans = new HashMap<>();

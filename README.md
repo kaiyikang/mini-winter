@@ -55,26 +55,40 @@ For an implementation detail on weak dependencies, consider the `tryInjectProper
 
 ### BeanPostProcessor
 
-当前的流程是：
+The current process is as follows:
 
-1. 创建 bean definition
-2. 根据 definition，创建 instance
-3. 为这个 instance， 注入其他的 instance
-4. 准备好完整的 bean
+1.  Create the bean definition.
+2.  Create an instance based on the definition.
+3.  Inject other instances into this instance.
+4.  The complete bean is ready.
 
-新的需求是，如果要替换 Bean，或为已经实例化的 Bean 添加新的逻辑，则需要用到 BeanPostProcessor。它发生在第二步和第三步。
+A new requirement has emerged: if we need to replace a bean or add new logic to an already instantiated bean, we must use a `BeanPostProcessor`. This happens around steps 2 and 3.
 
-第二步可以创建 BeanProxy 并且交还给工厂，以替换原来的 Bean。第三步有两点值得注意：
+After step 2, a `BeanProxy` can be created and returned to the factory, replacing the original bean. For step 3, there are two important points to note:
 
-1. 比如 Controller 要注入 Bean，则应该注入 BeanProxy，而不是原始 Bean
-2. 如果这个 Bean 要注入其他依赖，是注入原始 Bean，还是 BeanProxy，答案应该是原始 Bean，因为真正在做操作的时候，是原始 Bean 在做。
+1.  For example, if a `Controller` needs a bean to be injected, the `BeanProxy` should be injected, not the original bean.
+2.  If this bean itself needs other dependencies, should they be injected into the original bean or the `BeanProxy`? The answer is the **original bean**, because the original bean is the one that actually performs the operations.
 
-总结下来是：
+In summary:
 
-- 谁依赖我，就要暴露代理对象。
-- 我依赖谁，就要把依赖注入原始对象。
+- To any bean that depends on me, expose the proxy object.
+- For any dependency I have, inject it into the original object.
 
-在解决第二个问题时，可以在 BeanPostProcessor 拓展出一个新的方法，以确保在给 Bean 注入属性时，返回原始的 Bean 进行注入。并且在使用属性时，永远使用 getter，而不是直接访问字段，因为注入发生在原始 Bean 上。
+To solve the second problem, we can extend `BeanPostProcessor` with a new method. This method ensures that when injecting properties into a bean, the **original bean** is returned for the injection process. Furthermore, when using these properties, we should **always use getters** instead of accessing fields directly, because the injection occurs on the original bean.
+
+In the unit test, we can observe the proxy's reference chain:
+
+```bash
+proxy: SecondProxyBean@23
+name = null
+target = FirstProxyBean@96
+    name = null
+    target = OriginBean@98
+        name = "Scan App"
+        version = "v1.0"
+    version = null
+version = null
+```
 
 ## Thinking
 
@@ -86,3 +100,4 @@ For an implementation detail on weak dependencies, consider the `tryInjectProper
 2025.09.09 PropertyResolver Done
 2025.09.17 BeanDefinition Done
 2025.09.19 Create BeanInstance Done
+2025.09.21 BeanPostProcessor Done
