@@ -90,9 +90,43 @@ target = FirstProxyBean@96
 version = null
 ```
 
-## Finish IOC
+### Finish IOC
 
 Finish interface.
+
+## AOP
+
+Aspect Oriented Programming, 为组装好的 Bean 对象增加额外通用的功能。这些功能的特点是，不属于核心业务，但又横跨了不同业务的方法。AOP 会为 Bean 加一层代理，当调用 bean 方法时，先调用代理方法，然后再让 bean 处理请求，最后还可以加入些收尾工作。
+
+有三种方法实现：
+
+- 编译期：将外挂代码直接在编译成 class 文件时缝入。性能好，但需要特殊编译器，最复杂。
+- 类加载期：当 class 被加载到 JVM 内存之前，进行拦截，加入外挂逻辑。灵活，但需要理解 JVM 加载机制。
+- 运行期：外挂代码是普通 java 类，被动态生成为 Bean 的代理对象。最常用和简单。
+
+mini-winter 只支持注解方式，Bean 会明确知道外挂的样子，支持处理所有的类，实现的机制选择 Byte Buddy。
+
+## ProxyResolver
+
+两个东西必不可少：
+
+1. 原始的 Bean
+2. 拦截器 Interceptor：拦截目标 Bean 方法，自动调用拦截器实现代理功能。
+
+执行的流程是：
+
+1. 调用代理的方法
+2. 代理将调用转发至拦截器
+3. 拦截器执行额外逻辑，并决定合适调用原始的 Bean 方法
+4. 执行原始 Bean 方法
+5. 拦截器处理结果
+6. 代理返回结果
+
+AOP 弱化了具体的方法，字段等概念，而强化了动态的概念，例如「方法调用」。如果按照 AOP 的术语描述，目标对象的方法调用，字段访问等类似的事件点，都被定义成 Join Point。我们感兴趣的那些 Join Point，被额外筛选出来的，都被称为 Pointcut。
+
+对 Pointcut 具体做什么，则叫做 Advice。
+
+Joint Point 和 Advice 统一起来，被称为 Aspect。
 
 ## Thinking
 
