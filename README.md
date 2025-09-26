@@ -96,41 +96,42 @@ Finish interface.
 
 ## AOP
 
-Aspect Oriented Programming, 为组装好的 Bean 对象增加额外通用的功能。这些功能的特点是，不属于核心业务，但又横跨了不同业务的方法。AOP 会为 Bean 加一层代理，当调用 bean 方法时，先调用代理方法，然后再让 bean 处理请求，最后还可以加入些收尾工作。
+**Aspect-Oriented Programming (AOP)** adds extra, common functionality to already assembled Bean objects. This functionality is characterized by not being part of the core business logic, yet it cuts across methods in different business areas. AOP adds a proxy layer to a Bean. When a bean's method is called, the proxy's method is invoked first, which then lets the bean handle the request, and finally, some finishing work can be added.
 
-有三种方法实现：
+There are three ways to implement this:
 
-- 编译期：将外挂代码直接在编译成 class 文件时缝入。性能好，但需要特殊编译器，最复杂。
-- 类加载期：当 class 被加载到 JVM 内存之前，进行拦截，加入外挂逻辑。灵活，但需要理解 JVM 加载机制。
-- 运行期：外挂代码是普通 java 类，被动态生成为 Bean 的代理对象。最常用和简单。
+- **Compile-time**: The "add-on" code is directly woven into the `.class` file during compilation. It offers the best performance but is the most complex, requiring a special compiler.
+- **Load-time**: When a `.class` file is being loaded into the JVM's memory, it is intercepted, and the "add-on" logic is injected. This is flexible but requires an understanding of the JVM's class-loading mechanism.
+- **Run-time**: The "add-on" code is a regular Java class, which is dynamically generated as a proxy object for the Bean. This is the most common and simplest approach.
 
-mini-winter 只支持注解方式，Bean 会明确知道外挂的样子，支持处理所有的类，实现的机制选择 Byte Buddy。
+mini-winter only supports the annotation-based approach, where a Bean clearly knows what "add-on" it has. It supports proxying all types of classes and uses Byte Buddy as its implementation mechanism.
 
-## ProxyResolver
+### ProxyResolver
 
-两个东西必不可少：
+Two things are essential:
 
-1. 原始的 Bean
-2. 拦截器 Interceptor：拦截目标 Bean 方法，自动调用拦截器实现代理功能。
+1.  The original Bean.
+2.  The Interceptor: It intercepts the target Bean's method calls and automatically invokes the interceptor to implement the proxy functionality.
 
-执行的流程是：
+The execution flow is as follows:
 
-1. 调用代理的方法
-2. 代理将调用转发至拦截器
-3. 拦截器执行额外逻辑，并决定合适调用原始的 Bean 方法
-4. 执行原始 Bean 方法
-5. 拦截器处理结果
-6. 代理返回结果
+1.  The proxy's method is called.
+2.  The proxy forwards the call to the interceptor.
+3.  The interceptor executes its extra logic and decides when to call the original Bean's method.
+4.  The original Bean's method is executed.
+5.  The interceptor processes the result.
+6.  The proxy returns the final result.
 
-AOP 弱化了具体的方法，字段等概念，而强化了动态的概念，例如「方法调用」。如果按照 AOP 的术语描述，目标对象的方法调用，字段访问等类似的事件点，都被定义成 Join Point。我们感兴趣的那些 Join Point，被额外筛选出来的，都被称为 Pointcut。
+AOP de-emphasizes concrete concepts like methods and fields, instead emphasizing dynamic concepts like "method invocation." In AOP terminology, event points like method calls or field access on a target object are defined as **Join Points**. The specific Join Points that we are interested in, which are filtered out, are defined by a **Pointcut**.
 
-对 Pointcut 具体做什么，则叫做 Advice。
+What to do at a Pointcut is called an **Advice**.
 
-Joint Point 和 Advice 统一起来，被称为 Aspect。
+An **Aspect** is the combination of a **Pointcut** and an **Advice**. It modularizes a concern that cuts across multiple types and objects by defining "where" (the Pointcut) and "what" (the Advice) to do.
 
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
+2. Starting with unittest makes it easier to understand.
 
 ## Timeline
 
@@ -140,3 +141,4 @@ Joint Point 和 Advice 统一起来，被称为 Aspect。
 2025.09.19 Create BeanInstance Done
 2025.09.24 BeanPostProcessor Done
 2025.09.24 IOC Done
+2025.09.26 ProxyResolver Done
