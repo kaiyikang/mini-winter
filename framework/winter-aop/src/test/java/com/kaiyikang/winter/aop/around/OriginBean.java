@@ -1,12 +1,15 @@
-package com.kaiyikang.winter.aop;
+package com.kaiyikang.winter.aop.around;
 
+import com.kaiyikang.winter.annotation.Component;
+import com.kaiyikang.winter.annotation.Value;
+
+@Component
+@Around("aroundInvocationHandler")
 public class OriginBean {
 
+    @Value("${customer.name}")
     public String name;
 
-    /**
-     * Pointcut
-     */
     @Polite
     public String hello() {
         return "Hello, " + name + ".";

@@ -128,6 +128,16 @@ What to do at a Pointcut is called an **Advice**.
 
 An **Aspect** is the combination of a **Pointcut** and an **Advice**. It modularizes a concern that cuts across multiple types and objects by defining "where" (the Pointcut) and "what" (the Advice) to do.
 
+### Around
+
+@Polite 针对方法，表示需要被特别处理。针对需要应用 AOP 的类，使用 @Around("aroundInvocationHandler")，其中的值，告诉框架，使用该 handler 处理 Aspect。
+
+AroundInvocationHandler 是一个普通的 Bean，被标记了 @Component。为了将 handler 装配进应用，使用 @Configuration, @ComponentScan 并使用 @Bean 标记创建 AroundProxyBeanPostProcessor 对象，交给 spring 管理。随后，AroundProxyBeanPostProcessor 会扫描 Bean 类是否包含@Around，如果包含，创建返回 originBean 的代理，否则不做处理，直接返回。
+
+另外，为了实现 before，或 after 模式，可以使用 adapter 模式，提供额外的 BeforeInvocationHandlerAdapter 以及 AfterInvocationHandlerAdapter 即可。
+
+最后，如果想要使用自定义的注解来实现 AOP，比如标注@Transactional，则可以使用通用基类 AnnotationProxyBeanPostProcessor<A extends Annotation>，最写一个类继承 AnnotationProxyBeanPostProcessor<Transactional>，就可以实现。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.

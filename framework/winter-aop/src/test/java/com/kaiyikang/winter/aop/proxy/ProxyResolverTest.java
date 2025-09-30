@@ -1,10 +1,12 @@
-package com.kaiyikang.winter.aop;
+package com.kaiyikang.winter.aop.proxy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
+
+import com.kaiyikang.winter.aop.ProxyResolver;
 
 public class ProxyResolverTest {
 
