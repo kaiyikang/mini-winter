@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 import com.kaiyikang.winter.annotation.Component;
 
 @Component
-public class PoliteInvocationHander extends AfterInvocationHandlerAdapter {
+public class PoliteInvocationHandler extends AfterInvocationHandlerAdapter {
 
     @Override
     public Object after(Object proxy, Object returnValue, Method method, Object[] args) {

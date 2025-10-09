@@ -1,4 +1,4 @@
-package com.kaiyikang.winter.aop.around;
+package com.kaiyikang.winter.aop.before;
 
 import com.kaiyikang.winter.annotation.Bean;
 import com.kaiyikang.winter.annotation.ComponentScan;
@@ -7,10 +7,10 @@ import com.kaiyikang.winter.aop.AroundProxyBeanPostProcessor;
 
 @Configuration
 @ComponentScan
-public class AroundApplication {
+public class BeforeApplication {
 
     @Bean
-    AroundProxyBeanPostProcessor crateAroundProxyBeanPostProcessor() {
+    AroundProxyBeanPostProcessor createAroundProxyBeanPostProcessor() {
         return new AroundProxyBeanPostProcessor();
     }
 }
