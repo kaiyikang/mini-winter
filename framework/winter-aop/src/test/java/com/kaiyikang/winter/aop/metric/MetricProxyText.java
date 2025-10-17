@@ -14,7 +14,7 @@ import com.kaiyikang.winter.io.PropertyResolver;
 public class MetricProxyText {
     @Test
     public void testMetricProxy() {
-        try (var ctx = new AnnotationConfigApplicationContext(getClass(), createPropertyResolver())) {
+        try (var ctx = new AnnotationConfigApplicationContext(MetricApplication.class, createPropertyResolver())) {
             HashWorker worker = ctx.getBean(HashWorker.class);
 
             // should be proxy
