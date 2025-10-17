@@ -20,7 +20,7 @@ public class ProxyResolverTest {
 
         // When
         // Create proxy
-        OriginBean proxy = new ProxyResolver().createProxy(origin, new PoliteInvocationHandler());
+        OriginBean proxy = ProxyResolver.getInstance().createProxy(origin, new PoliteInvocationHandler());
         System.out.println(proxy.getClass().getName());
 
         // Then
