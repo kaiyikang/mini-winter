@@ -3,6 +3,7 @@ package com.kaiyikang.winter.aop.after;
 import java.lang.reflect.Method;
 
 import com.kaiyikang.winter.annotation.Component;
+import com.kaiyikang.winter.aop.AfterInvocationHandlerAdapter;
 
 @Component
 public class PoliteInvocationHandler extends AfterInvocationHandlerAdapter {

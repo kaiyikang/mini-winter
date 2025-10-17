@@ -3,15 +3,12 @@ package com.kaiyikang.winter.aop;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-import javax.management.RuntimeErrorException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
-import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 
 public class ProxyResolver {
@@ -19,6 +16,18 @@ public class ProxyResolver {
     final Logger logger = LoggerFactory.getLogger(getClass());
 
     final ByteBuddy byteBuddy = new ByteBuddy();
+
+    private static ProxyResolver INSTANCE = null;
+
+    private ProxyResolver() {
+    }
+
+    public static ProxyResolver getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new ProxyResolver();
+        }
+        return INSTANCE;
+    }
 
     @SuppressWarnings("unchecked")
     public <T> T createProxy(T bean, InvocationHandler handler) {
