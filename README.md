@@ -130,13 +130,13 @@ An **Aspect** is the combination of a **Pointcut** and an **Advice**. It modular
 
 ### Around
 
-@Polite 针对方法，表示需要被特别处理。针对需要应用 AOP 的类，使用 @Around("aroundInvocationHandler")，其中的值，告诉框架，使用该 handler 处理 Aspect。
+The `@Polite` annotation is applied to methods to indicate that they require special processing. For classes that need AOP applied, use `@Around("aroundInvocationHandler")`, where the value specifies which handler the framework should use to process the aspect.
 
-AroundInvocationHandler 是一个普通的 Bean，被标记了 @Component。为了将 handler 装配进应用，使用 @Configuration, @ComponentScan 并使用 @Bean 标记创建 AroundProxyBeanPostProcessor 对象，交给 spring 管理。随后，AroundProxyBeanPostProcessor 会扫描 Bean 类是否包含@Around，如果包含，创建返回 originBean 的代理，否则不做处理，直接返回。
+The `AroundInvocationHandler` is a regular Bean marked with `@Component`. To wire the handler into the application, use `@Configuration` and `@ComponentScan`, and annotate the creation of the `AroundProxyBeanPostProcessor` object with `@Bean` to let the container manage it. Subsequently, `AroundProxyBeanPostProcessor` scans Bean classes to check if they contain the `@Around` annotation. If present, it creates and returns a proxy for the original Bean; otherwise, it returns the Bean unmodified.
 
-另外，为了实现 before，或 after 模式，可以使用 adapter 模式，提供额外的 BeforeInvocationHandlerAdapter 以及 AfterInvocationHandlerAdapter 即可。
+Additionally, to implement **before** or **after** patterns, the adapter pattern can be used by providing `BeforeInvocationHandlerAdapter` and `AfterInvocationHandlerAdapter`.
 
-最后，如果想要使用自定义的注解来实现 AOP，比如标注@Transactional，则可以使用通用基类 AnnotationProxyBeanPostProcessor<A extends Annotation>，最写一个类继承 AnnotationProxyBeanPostProcessor<Transactional>，就可以实现。
+Finally, to implement AOP using custom annotations (e.g., `@Transactional`), you can use the generic base class `AnnotationProxyBeanPostProcessor<A extends Annotation>`. Simply create a class that extends `AnnotationProxyBeanPostProcessor<Transactional>` to achieve this.
 
 ## Thinking
 
@@ -152,3 +152,4 @@ AroundInvocationHandler 是一个普通的 Bean，被标记了 @Component。为�
 2025.09.24 BeanPostProcessor Done
 2025.09.24 IOC Done
 2025.09.26 ProxyResolver Done
+2025.10.17 Around Done
