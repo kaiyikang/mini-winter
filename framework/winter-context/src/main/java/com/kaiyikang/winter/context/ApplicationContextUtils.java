@@ -10,7 +10,7 @@ public class ApplicationContextUtils {
 
     @Nonnull
     public static ApplicationContext getRequiredApplicationContext() {
-        return Objects.requireNonNull(getRequiredApplicationContext(), "ApplicationContext is not set.");
+        return Objects.requireNonNull(getApplicationContext(), "ApplicationContext is not set.");
     }
 
     @Nullable

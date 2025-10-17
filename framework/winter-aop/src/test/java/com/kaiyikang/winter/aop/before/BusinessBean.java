@@ -19,6 +19,6 @@ public class BusinessBean {
 
     public String morning(String name) {
         logger.info("Morning, {}.", name);
-        return "Hello, " + name + ".";
+        return "Morning, " + name + ".";
     }
 }
