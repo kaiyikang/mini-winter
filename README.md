@@ -31,8 +31,8 @@ A `BeanDefinition` is a core class designed to hold all metadata for a Bean, suc
 
 Beans are primarily defined in two ways:
 
-1.  **Class-based Beans**: When a class is annotated with a stereotype like `@Component`, the class itself serves as the Bean's definition.
-2.  **Factory-method Beans**: In a `@Configuration` class, methods annotated with `@Bean` act as factories to create Beans.
+1. **Class-based Beans**: When a class is annotated with a stereotype like `@Component`, the class itself serves as the Bean's definition.
+2. **Factory-method Beans**: In a `@Configuration` class, methods annotated with `@Bean` act as factories to create Beans.
 
 Notably, the `beanClass` field in a `BeanDefinition` stores the Bean's **declared type** (e.g., an interface), not its actual runtime type (e.g., the implementation class). This declared type is crucial for dependency injection and type lookups, while the actual type can only be determined via `instance.getClass()` after creation.
 
@@ -46,8 +46,8 @@ The purpose of the `AnnotationConfigApplicationContext` is to scan for and colle
 
 This leads to a two-phase bean creation process:
 
-1.  **Instantiation:** The bean instance is created by invoking its constructor, which resolves all strong dependencies.
-2.  **Population:** The instance is then populated with weak dependencies through setter and field injection.
+1. **Instantiation:** The bean instance is created by invoking its constructor, which resolves all strong dependencies.
+2. **Population:** The instance is then populated with weak dependencies through setter and field injection.
 
 Regarding API naming conventions: `get` methods are expected to always return an object (or throw an exception), whereas `find` methods may return `null` if the object is not found. See `getBean` and `findBean` for a practical example.
 
@@ -57,17 +57,17 @@ For an implementation detail on weak dependencies, consider the `tryInjectProper
 
 The current process is as follows:
 
-1.  Create the bean definition.
-2.  Create an instance based on the definition.
-3.  Inject other instances into this instance.
-4.  The complete bean is ready.
+1. Create the bean definition.
+2. Create an instance based on the definition.
+3. Inject other instances into this instance.
+4. The complete bean is ready.
 
 A new requirement has emerged: if we need to replace a bean or add new logic to an already instantiated bean, we must use a `BeanPostProcessor`. This happens around steps 2 and 3.
 
 After step 2, a `BeanProxy` can be created and returned to the factory, replacing the original bean. For step 3, there are two important points to note:
 
-1.  For example, if a `Controller` needs a bean to be injected, the `BeanProxy` should be injected, not the original bean.
-2.  If this bean itself needs other dependencies, should they be injected into the original bean or the `BeanProxy`? The answer is the **original bean**, because the original bean is the one that actually performs the operations.
+1. For example, if a `Controller` needs a bean to be injected, the `BeanProxy` should be injected, not the original bean.
+2. If this bean itself needs other dependencies, should they be injected into the original bean or the `BeanProxy`? The answer is the **original bean**, because the original bean is the one that actually performs the operations.
 
 In summary:
 
@@ -110,17 +110,17 @@ mini-winter only supports the annotation-based approach, where a Bean clearly kn
 
 Two things are essential:
 
-1.  The original Bean.
-2.  The Interceptor: It intercepts the target Bean's method calls and automatically invokes the interceptor to implement the proxy functionality.
+1. The original Bean.
+2. The Interceptor: It intercepts the target Bean's method calls and automatically invokes the interceptor to implement the proxy functionality.
 
 The execution flow is as follows:
 
-1.  The proxy's method is called.
-2.  The proxy forwards the call to the interceptor.
-3.  The interceptor executes its extra logic and decides when to call the original Bean's method.
-4.  The original Bean's method is executed.
-5.  The interceptor processes the result.
-6.  The proxy returns the final result.
+1. The proxy's method is called.
+2. The proxy forwards the call to the interceptor.
+3. The interceptor executes its extra logic and decides when to call the original Bean's method.
+4. The original Bean's method is executed.
+5. The interceptor processes the result.
+6. The proxy returns the final result.
 
 AOP de-emphasizes concrete concepts like methods and fields, instead emphasizing dynamic concepts like "method invocation." In AOP terminology, event points like method calls or field access on a target object are defined as **Join Points**. The specific Join Points that we are interested in, which are filtered out, are defined by a **Pointcut**.
 
@@ -137,6 +137,23 @@ The `AroundInvocationHandler` is a regular Bean marked with `@Component`. To wir
 Additionally, to implement **before** or **after** patterns, the adapter pattern can be used by providing `BeforeInvocationHandlerAdapter` and `AfterInvocationHandlerAdapter`.
 
 Finally, to implement AOP using custom annotations (e.g., `@Transactional`), you can use the generic base class `AnnotationProxyBeanPostProcessor<A extends Annotation>`. Simply create a class that extends `AnnotationProxyBeanPostProcessor<Transactional>` to achieve this.
+
+## JDBC And Transaction
+
+Transaction是操作数据库的概念，确保了ACID：
+
+- 原子性 (Atomicity)：要么全部成功，要么全部失败会滚。
+- 一致性 (Consistency)：事务完成后，数据库保持状态一致。
+- 隔离性 (Isolation)：事务之间不受影响，且事务中间状态对其它不可见。
+- 持久性 (Durability)：事务提交后，永久改变数据库的状态。
+
+本章会完成声明式事务，即`@Transactional`，运行有该注释的方法时，会自动实现ACID。
+
+### JdbcTemplate
+
+JDBC 是Java Database Connectivity的缩写，是java语言连接数据库的标准API。本章会完成`JdbcTemplate`，它封装了JDBC的繁琐操作，让我们只需要关注SQL语言，以及参数。
+
+这里使用HikariCP实现基于javax.sql.DataSource 接口的类，然后就可以将DataSource注册IoC容器中，JdbcTemplate则可以操作DataSource来实现对于数据库的修改。
 
 ## Thinking
 
