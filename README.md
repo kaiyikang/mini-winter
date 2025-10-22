@@ -155,6 +155,32 @@ JDBC 是Java Database Connectivity的缩写，是java语言连接数据库的标
 
 这里使用HikariCP实现基于javax.sql.DataSource 接口的类，然后就可以将DataSource注册IoC容器中，JdbcTemplate则可以操作DataSource来实现对于数据库的修改。
 
+为了连接数据库并执行查询，JDBC 定义了一个标准的、层级化的对象创建流程。该流程确保了结构化和安全的数据库访问。
+
+伪代码展示了它们的核心关系：
+
+```java
+String sql = "SELECT ... FROM ... WHERE ...";
+
+// 1. 从 DataSource 获取 Connection
+Connection con = dataSource.getConnection();
+
+// 2. 使用 Connection 创建 PreparedStatement
+PreparedStatement ps = con.prepareStatement(sql);
+
+// 3. 执行 PreparedStatement 获取 ResultSet
+ResultSet rs = ps.executeQuery();
+
+// 4. 遍历 ResultSet
+while(rs.next()) {
+    // 从当前行提取数据
+}
+```
+
+这是一个严格的依赖链：`DataSource` 创建 `Connection`，`Connection` 创建 `PreparedStatement`，`PreparedStatement` 执行后产生 `ResultSet`。这些都是必须在使用后关闭的资源，推荐使用 `try-with-resources` 语句进行管理。
+
+代码实现方面
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
