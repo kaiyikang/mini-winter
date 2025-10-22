@@ -179,8 +179,6 @@ while(rs.next()) {
 
 这是一个严格的依赖链：`DataSource` 创建 `Connection`，`Connection` 创建 `PreparedStatement`，`PreparedStatement` 执行后产生 `ResultSet`。这些都是必须在使用后关闭的资源，推荐使用 `try-with-resources` 语句进行管理。
 
-代码实现方面
-
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
