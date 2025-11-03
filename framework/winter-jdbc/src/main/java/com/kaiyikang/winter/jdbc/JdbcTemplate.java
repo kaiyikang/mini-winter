@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,11 +79,37 @@ public class JdbcTemplate {
     }
 
     public Number updateAndReturnGeneratedKey(String sql, Object... args) throws DataAccessException {
-
+        return execute(
+                (Connection conn) -> {
+                    var ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    bingArgs(ps, args);
+                    return ps;
+                },
+                (PreparedStatement ps) -> {
+                    int n = ps.executeUpdate();
+                    if (n == 0) {
+                        throw new DataAccessException("0 rows inserted");
+                    }
+                    if (n > 1) {
+                        throw new DataAccessException("Multiple rows inserted.");
+                    }
+                    try (ResultSet keys = ps.getGeneratedKeys()) {
+                        // shift the cursor
+                        while (keys.next()) {
+                            // get the auto-generated ID
+                            return (Number) keys.getObject(1);
+                        }
+                    }
+                    throw new DataAccessException("Should not reach here");
+                });
     }
 
-    private int update(String sql, Object... args) throws DataAccessException {
-
+    public int update(String sql, Object... args) throws DataAccessException {
+        return execute(
+                preparedStatementCreator(sql, args),
+                (PreparedStatement ps) -> {
+                    return ps.executeUpdate();
+                });
     }
 
     private <T> T execute(PreparedStatementCreator psc, PreparedStatementCallback<T> action) {

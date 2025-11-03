@@ -7,7 +7,6 @@ import java.nio.file.Path;
 import java.util.Properties;
 import com.kaiyikang.winter.io.PropertyResolver;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 public class JdbcTestBase {
 
@@ -35,10 +34,10 @@ public class JdbcTestBase {
 
     public PropertyResolver createPropertyResolver() {
         var ps = new Properties();
-        ps.put("summer.datasource.url", "jdbc:sqlite:test.db");
-        ps.put("summer.datasource.username", "sa");
-        ps.put("summer.datasource.password", "");
-        ps.put("summer.datasource.driver-class-name", "org.sqlite.JDBC");
+        ps.put("winter.datasource.url", "jdbc:sqlite:test.db");
+        ps.put("winter.datasource.username", "sa");
+        ps.put("winter.datasource.password", "");
+        ps.put("winter.datasource.driver-class-name", "org.sqlite.JDBC");
         var pr = new PropertyResolver(ps);
         return pr;
     }
