@@ -138,46 +138,50 @@ Additionally, to implement **before** or **after** patterns, the adapter pattern
 
 Finally, to implement AOP using custom annotations (e.g., `@Transactional`), you can use the generic base class `AnnotationProxyBeanPostProcessor<A extends Annotation>`. Simply create a class that extends `AnnotationProxyBeanPostProcessor<Transactional>` to achieve this.
 
-## JDBC And Transaction
+## JDBC and Transactions
 
-Transaction是操作数据库的概念，确保了ACID：
+A **transaction** is a fundamental concept in database operations that guarantees **ACID** properties:
 
-- 原子性 (Atomicity)：要么全部成功，要么全部失败会滚。
-- 一致性 (Consistency)：事务完成后，数据库保持状态一致。
-- 隔离性 (Isolation)：事务之间不受影响，且事务中间状态对其它不可见。
-- 持久性 (Durability)：事务提交后，永久改变数据库的状态。
+- **Atomicity**: All operations within the transaction either succeed entirely, or they all fail and are rolled back. It's an "all-or-nothing" principle.
+- **Consistency**: The database remains in a consistent state after the transaction is completed. It transitions from one valid state to another.
+- **Isolation**: Concurrent transactions do not affect each other, and the intermediate state of one transaction is not visible to others.
+- **Durability**: Once a transaction is committed, its changes to the database are permanent and will survive system failures.
 
-本章会完成声明式事务，即`@Transactional`，运行有该注释的方法时，会自动实现ACID。
+This chapter will cover the implementation of **declarative transactions**, notably through the `@Transactional` annotation. When a method marked with this annotation is executed, the underlying framework automatically manages the transaction lifecycle (begin, commit, rollback) to enforce these ACID properties.
 
 ### JdbcTemplate
 
-JDBC 是Java Database Connectivity的缩写，是java语言连接数据库的标准API。本章会完成`JdbcTemplate`，它封装了JDBC的繁琐操作，让我们只需要关注SQL语言，以及参数。
+**JDBC** stands for **Java Database Connectivity**, which is the standard API for connecting Java applications to databases. In this chapter, we will implement a `JdbcTemplate`. This template encapsulates the verbose and boilerplate code of raw JDBC, allowing developers to focus on writing SQL and providing parameters.
 
-这里使用HikariCP实现基于javax.sql.DataSource 接口的类，然后就可以将DataSource注册IoC容器中，JdbcTemplate则可以操作DataSource来实现对于数据库的修改。
+We will use **HikariCP**, a high-performance connection pool, to provide an implementation of the `javax.sql.DataSource` interface. This `DataSource` can then be registered as a bean in the IoC container. The `JdbcTemplate` will use this `DataSource` to perform database operations.
 
-为了连接数据库并执行查询，JDBC 定义了一个标准的、层级化的对象创建流程。该流程确保了结构化和安全的数据库访问。
+To connect to a database and execute a query, JDBC defines a standard, hierarchical object creation flow. This process ensures structured and safe database access.
 
-伪代码展示了它们的核心关系：
+The core relationship is demonstrated by the following pseudo-code:
 
 ```java
 String sql = "SELECT ... FROM ... WHERE ...";
 
-// 1. 从 DataSource 获取 Connection
-Connection con = dataSource.getConnection();
+// 1. Get a Connection from the DataSource
+try (Connection con = dataSource.getConnection();
 
-// 2. 使用 Connection 创建 PreparedStatement
-PreparedStatement ps = con.prepareStatement(sql);
+     // 2. Create a PreparedStatement using the Connection
+     PreparedStatement ps = con.prepareStatement(sql)) {
 
-// 3. 执行 PreparedStatement 获取 ResultSet
-ResultSet rs = ps.executeQuery();
+    // 3. Execute the PreparedStatement to get a ResultSet
+    try (ResultSet rs = ps.executeQuery()) {
 
-// 4. 遍历 ResultSet
-while(rs.next()) {
-    // 从当前行提取数据
+        // 4. Iterate through the ResultSet
+        while (rs.next()) {
+            // Extract data from the current row
+        }
+    }
 }
 ```
 
-这是一个严格的依赖链：`DataSource` 创建 `Connection`，`Connection` 创建 `PreparedStatement`，`PreparedStatement` 执行后产生 `ResultSet`。这些都是必须在使用后关闭的资源，推荐使用 `try-with-resources` 语句进行管理。
+This illustrates a strict dependency chain: a `DataSource` creates a `Connection`, which in turn creates a `PreparedStatement`, and its execution yields a `ResultSet`. All of these (`Connection`, `PreparedStatement`, `ResultSet`) are resources that must be closed after use. The recommended way to manage them is with a `try-with-resources` statement.
+
+In our implementation, this resource management is handled elegantly by an `execute` function that employs the **Loan Pattern** (also known as the **Execute Around Method Pattern**). This pattern works as follows: a method acquires a resource (e.g., a `Connection`), "loans" it to a block of code (typically a lambda expression) for use, and finally ensures the resource is safely released, regardless of whether the code executes successfully or throws an exception.
 
 ## Thinking
 
@@ -194,3 +198,4 @@ while(rs.next()) {
 2025.09.24 IOC Done
 2025.09.26 ProxyResolver Done
 2025.10.17 Around Done
+2025.11.03 JdbcTemplate Done
