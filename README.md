@@ -183,6 +183,12 @@ This illustrates a strict dependency chain: a `DataSource` creates a `Connection
 
 In our implementation, this resource management is handled elegantly by an `execute` function that employs the **Loan Pattern** (also known as the **Execute Around Method Pattern**). This pattern works as follows: a method acquires a resource (e.g., a `Connection`), "loans" it to a block of code (typically a lambda expression) for use, and finally ensures the resource is safely released, regardless of whether the code executes successfully or throws an exception.
 
+### @Transactional
+
+使用了事务周期，可以很好的确保调用的原子性。
+
+DataSourceTransactionManager类使用AOP的方式(`AnnotationProxyBeanPostProcessor<Transactional>`)，会开启一个 ThreadLocal，如果Thread已经存在，则继续invoke，否则创建新的Transaction。前者存在的场景存在于嵌套型的数据库更新方法。TransactionalUtils.getCurrentConnection() 单纯拿取当前 Thread。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.

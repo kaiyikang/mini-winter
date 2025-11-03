@@ -11,6 +11,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import com.kaiyikang.winter.exception.DataAccessException;
+import com.kaiyikang.winter.jdbc.tx.TransactionalUtils;
 
 public class JdbcTemplate {
 
@@ -121,7 +122,18 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(ConnectionCallback<T> action) throws DataAccessException {
+
+        // Get current Connection
+        Connection current = TransactionalUtils.getCurrentConnection();
+        if (current != null) {
+            try {
+                return action.doInConnection(current);
+            } catch (SQLException e) {
+                throw new DataAccessException(e);
+            }
+        }
         // Create a new connection to database
+
         try (Connection newConnection = dataSource.getConnection()) {
             final boolean autoCommit = newConnection.getAutoCommit();
             if (!autoCommit) {
