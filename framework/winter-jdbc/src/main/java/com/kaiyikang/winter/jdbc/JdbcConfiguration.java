@@ -6,6 +6,9 @@ import com.kaiyikang.winter.annotation.Autowired;
 import com.kaiyikang.winter.annotation.Bean;
 import com.kaiyikang.winter.annotation.Configuration;
 import com.kaiyikang.winter.annotation.Value;
+import com.kaiyikang.winter.jdbc.tx.DataSourceTransactionManager;
+import com.kaiyikang.winter.jdbc.tx.PlatformTransactionManager;
+import com.kaiyikang.winter.jdbc.tx.TransactionBeanPostProcessor;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -13,8 +16,8 @@ import com.zaxxer.hikari.HikariDataSource;
 public class JdbcConfiguration {
 
     @Bean(destroyMethod = "close")
-    DataSource dataSrouce(
-            @Value("$.{winter.dataSource.url}") String url,
+    DataSource dataSource(
+            @Value("${winter.datasource.url}") String url,
             @Value("${winter.datasource.username}") String username,
             @Value("${winter.datasource.password}") String password,
             @Value("${winter.datasource.driver-class-name:}") String driver,
@@ -39,5 +42,15 @@ public class JdbcConfiguration {
     @Bean
     JdbcTemplate jdbcTemplate(@Autowired DataSource dataSource) {
         return new JdbcTemplate(dataSource);
+    }
+
+    @Bean
+    TransactionBeanPostProcessor transactionBeanPostProcessor() {
+        return new TransactionBeanPostProcessor();
+    }
+
+    @Bean
+    PlatformTransactionManager platformTransactionManager(@Autowired DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
     }
 }

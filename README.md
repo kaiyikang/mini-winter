@@ -183,11 +183,20 @@ This illustrates a strict dependency chain: a `DataSource` creates a `Connection
 
 In our implementation, this resource management is handled elegantly by an `execute` function that employs the **Loan Pattern** (also known as the **Execute Around Method Pattern**). This pattern works as follows: a method acquires a resource (e.g., a `Connection`), "loans" it to a block of code (typically a lambda expression) for use, and finally ensures the resource is safely released, regardless of whether the code executes successfully or throws an exception.
 
-### @Transactional
+### The `@Transactional` Annotation
 
-使用了事务周期，可以很好的确保调用的原子性。
+The `@Transactional` annotation, by leveraging a transaction lifecycle, effectively ensures the **atomicity** of operations.
 
-DataSourceTransactionManager类使用AOP的方式(`AnnotationProxyBeanPostProcessor<Transactional>`)，会开启一个 ThreadLocal，如果Thread已经存在，则继续invoke，否则创建新的Transaction。前者存在的场景存在于嵌套型的数据库更新方法。TransactionalUtils.getCurrentConnection() 单纯拿取当前 Thread。
+The `DataSourceTransactionManager` class, when invoked via an AOP mechanism (as orchestrated by your custom `AnnotationProxyBeanPostProcessor<Transactional>`), manages transactions by utilizing a `ThreadLocal`.
+
+This `ThreadLocal` is used to bind the current transaction to the executing thread.
+
+- **If a transaction is already bound to the current thread** (i.e., the `ThreadLocal` contains an active transaction), the `DataSourceTransactionManager` will typically **join this existing transaction** for subsequent method invocations within the same thread.
+- **Otherwise**, if no transaction is currently bound, it will **initiate a new transaction**.
+
+This scenario of joining an existing transaction is particularly relevant in **nested method calls** where an outer method has already started a transaction.
+
+Consequently, utility methods like `TransactionalUtils.getCurrentConnection()` can retrieve the database connection that is currently bound to the active transaction on the current thread.
 
 ## Thinking
 
@@ -205,3 +214,4 @@ DataSourceTransactionManager类使用AOP的方式(`AnnotationProxyBeanPostProces
 2025.09.26 ProxyResolver Done
 2025.10.17 Around Done
 2025.11.03 JdbcTemplate Done
+2025.11.04 Transactional Done
