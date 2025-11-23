@@ -200,21 +200,21 @@ Consequently, utility methods like `TransactionalUtils.getCurrentConnection()` c
 
 ## Implementation of MVC
 
-### 启动 ApplicationContext
+### Boot WebApp
 
-在本章中，我们希望使用当前的 mini-winter 框架创建一个 WebApp，将它打包为 WAR 文件。当 Tomcat 服务器启动后，它会扫描并加载该 WAR，从而在浏览器访问对应 URL 时，能够正确看到 WebApp 的响应结果。
+In this chapter, our goal is to create a WebApp using the current mini-winter framework and package it as a WAR (Web Application Archive) file. When the Tomcat server starts, it will scan for and load this WAR file, ensuring that when the corresponding URL is accessed in a browser, the WebApp's response is correctly displayed.
 
-一个典型的 Java Web 应用遵循 Servlet 规范（Servlet Specification）。Servlet 规范不仅定义了 WebApp 应该实现哪些接口，也定义了 Web 服务器（如 Tomcat）应如何加载 WebApp、以什么顺序处理请求、以及如何调用各类组件。这形成了一套清晰的解耦模型。Servlet 规范定义三类核心组件：
+A typical Java web application adheres to the Servlet Specification. The Servlet Specification defines not only the interfaces that a WebApp must implement but also how a web server (like Tomcat) should load the WebApp, the order in which requests are processed, and how various components are invoked. This establishes a clear decoupling model. The Servlet Specification defines three core component types:
 
-1. Listener：用于监听 WebApp 生命周期事件，包括应用启动、销毁，以及 Session 创建、属性变更等。
-2. Filter：在 HTTP 请求进入最终 Servlet 之前执行，比如权限校验、限流、日志、缓存检查等。
-3. Servlet：最终处理 HTTP 请求，例如收到 GET、POST 后应该执行何种业务逻辑，并输出响应。
+1.  **Listener**: Listens for lifecycle events of the WebApp, such as application startup and shutdown, as well as Session creation and attribute changes.
+2.  **Filter**: Executes before an HTTP request reaches the final Servlet. It is used for tasks like authorization, rate limiting, logging, and cache validation.
+3.  **Servlet**: Ultimately handles the HTTP request, determining the business logic to execute for GET, POST, or other methods, and generating the response.
 
-一个 Tomcat 可以部署多个 WebApp。每个 WebApp 都有自己的 ServletContext（上下文环境），常被称为“Web 应用上下文”。所有属于同一个 WebApp 的 Servlet、Filter、Listener 和资源文件，都在其独立的 ServletContext 中运行。
+A single Tomcat instance can deploy multiple WebApps. Each WebApp has its own `ServletContext`, often referred to as the "web application context." All Servlets, Filters, Listeners, and resource files belonging to the same WebApp operate within their own isolated `ServletContext`.
 
-我们的 mini-winter WebApp，也会完全运行在 Tomcat 为它创建的这个 ServletContext 中。
+Our mini-winter WebApp will also run entirely within the `ServletContext` that Tomcat creates for it.
 
-当 Tomcat 启动时，它会扫描 webapps 目录，将每一个 WAR 视为一个 Web 应用并为其创建对应的 ServletContext。随后 Tomcat 会读取`WEB-INF/web.xml`，其中包含了：
+When Tomcat starts up, it scans the `webapps` directory, treating each WAR file as a web application and creating a corresponding `ServletContext` for it. Tomcat then reads the `WEB-INF/web.xml` file, which contains:
 
 ```xml
 <listener>
@@ -222,16 +222,16 @@ Consequently, utility methods like `TransactionalUtils.getCurrentConnection()` c
 </listener>
 ```
 
-Tomcat 由此加载 ContextLoaderListener 并调用其 contextInitialized() 方法。在这个类中，我们遵循 ServletContextListener 的规范，通过覆写 contextInitialized() 来指定 WebApp 启动时应该执行的初始化逻辑。
+Based on this configuration, Tomcat loads the `ContextLoaderListener` and invokes its `contextInitialized()` method. In this class, we adhere to the `ServletContextListener` specification by overriding `contextInitialized()` to define the initialization logic that should run when the WebApp starts.
 
-对 mini-winter 框架而言，其中最关键的两件事是：
+For the mini-winter framework, the two most critical tasks are:
 
-1. 创建 ApplicationContext（mini-winter 的 IoC 容器）:负责组件扫描、实例化 bean、管理依赖等。
-2. 注册 DispatcherServlet 并将其映射到根路径 /: DispatcherServlet 在初始化时会获取 ApplicationContext (第一步中) 的引用，这使得它能够访问所有已扫描的控制器与服务组件。
+1.  **Create the `ApplicationContext`**: This is the IoC (Inversion of Control) container for mini-winter, responsible for component scanning, bean instantiation, and dependency management.
+2.  **Register the `DispatcherServlet` and map it to the root path `/`**: During its initialization, the `DispatcherServlet` obtains a reference to the `ApplicationContext` (created in the first step), which allows it to access all scanned controllers and service components.
 
-这样，当 WebApp 成功启动后，DispatcherServlet 成为整个 WebApp 的“前端控制器”（Front Controller）。当任意用户（例如用户 A）向该 WebApp 发送 HTTP 请求时，Tomcat 会根据 URL 匹配规则，将该请求交由 DispatcherServlet 处理。由于它被映射到 /，因此任何路径（除少量特殊情况外）都会被路由给它。
+Thus, once the WebApp has started successfully, the `DispatcherServlet` acts as the "Front Controller" for the entire application. When any user sends an HTTP request to this WebApp, Tomcat's URL matching rules will delegate the request to the `DispatcherServlet` for processing. Since it is mapped to `/`, virtually all paths (with a few exceptions) will be routed to it.
 
-DispatcherServlet 已经持有完整的 ApplicationContext，因此在处理请求时，它可以直接访问 mini-winter 框架中的控制器（Controller）、服务（Service）等组件，而无需依赖传统 Servlet API 的分发机制。请求的路由逻辑与后续业务处理，将完全由 mini-winter 框架内部的机制来完成。
+The `DispatcherServlet` already holds a complete reference to the `ApplicationContext`. Therefore, when processing a request, it can directly access components within the mini-winter framework, such as Controllers and Services, without relying on the traditional dispatching mechanisms of the Servlet API. The request routing and subsequent business logic are handled entirely by the internal mechanisms of the mini-winter framework.
 
 ## Thinking
 
@@ -250,3 +250,4 @@ DispatcherServlet 已经持有完整的 ApplicationContext，因此在处理请�
 2025.10.17 Around Done
 2025.11.03 JdbcTemplate Done
 2025.11.04 Transactional Done
+2025.11.23 Boot WebApp Done
