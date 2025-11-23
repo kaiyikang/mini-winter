@@ -9,7 +9,7 @@ For reference:
 - [mini-spring](https://github.com/DerekYRC/mini-spring)
 - [summer-framework](https://liaoxuefeng.com/books/summerframework/introduction/index.html)
 
-## IOC
+## IOC - Inversion Of Control
 
 ### Load Classes and Files
 
@@ -94,7 +94,7 @@ version = null
 
 Finish interface.
 
-## AOP
+## AOP - Aspect-Oriented Programming
 
 **Aspect-Oriented Programming (AOP)** adds extra, common functionality to already assembled Bean objects. This functionality is characterized by not being part of the core business logic, yet it cuts across methods in different business areas. AOP adds a proxy layer to a Bean. When a bean's method is called, the proxy's method is invoked first, which then lets the bean handle the request, and finally, some finishing work can be added.
 
@@ -138,7 +138,7 @@ Additionally, to implement **before** or **after** patterns, the adapter pattern
 
 Finally, to implement AOP using custom annotations (e.g., `@Transactional`), you can use the generic base class `AnnotationProxyBeanPostProcessor<A extends Annotation>`. Simply create a class that extends `AnnotationProxyBeanPostProcessor<Transactional>` to achieve this.
 
-## JDBC and Transactions
+## JDBC - Java DataBase Connectivity & Transactions
 
 A **transaction** is a fundamental concept in database operations that guarantees **ACID** properties:
 
@@ -197,6 +197,41 @@ This `ThreadLocal` is used to bind the current transaction to the executing thre
 This scenario of joining an existing transaction is particularly relevant in **nested method calls** where an outer method has already started a transaction.
 
 Consequently, utility methods like `TransactionalUtils.getCurrentConnection()` can retrieve the database connection that is currently bound to the active transaction on the current thread.
+
+## Implementation of MVC
+
+### 启动 ApplicationContext
+
+在本章中，我们希望使用当前的 mini-winter 框架创建一个 WebApp，将它打包为 WAR 文件。当 Tomcat 服务器启动后，它会扫描并加载该 WAR，从而在浏览器访问对应 URL 时，能够正确看到 WebApp 的响应结果。
+
+一个典型的 Java Web 应用遵循 Servlet 规范（Servlet Specification）。Servlet 规范不仅定义了 WebApp 应该实现哪些接口，也定义了 Web 服务器（如 Tomcat）应如何加载 WebApp、以什么顺序处理请求、以及如何调用各类组件。这形成了一套清晰的解耦模型。Servlet 规范定义三类核心组件：
+
+1. Listener：用于监听 WebApp 生命周期事件，包括应用启动、销毁，以及 Session 创建、属性变更等。
+2. Filter：在 HTTP 请求进入最终 Servlet 之前执行，比如权限校验、限流、日志、缓存检查等。
+3. Servlet：最终处理 HTTP 请求，例如收到 GET、POST 后应该执行何种业务逻辑，并输出响应。
+
+一个 Tomcat 可以部署多个 WebApp。每个 WebApp 都有自己的 ServletContext（上下文环境），常被称为“Web 应用上下文”。所有属于同一个 WebApp 的 Servlet、Filter、Listener 和资源文件，都在其独立的 ServletContext 中运行。
+
+我们的 mini-winter WebApp，也会完全运行在 Tomcat 为它创建的这个 ServletContext 中。
+
+当 Tomcat 启动时，它会扫描 webapps 目录，将每一个 WAR 视为一个 Web 应用并为其创建对应的 ServletContext。随后 Tomcat 会读取`WEB-INF/web.xml`，其中包含了：
+
+```xml
+<listener>
+    <listener-class>com.kaiyikang.winter.web.ContextLoaderListener</listener-class>
+</listener>
+```
+
+Tomcat 由此加载 ContextLoaderListener 并调用其 contextInitialized() 方法。在这个类中，我们遵循 ServletContextListener 的规范，通过覆写 contextInitialized() 来指定 WebApp 启动时应该执行的初始化逻辑。
+
+对 mini-winter 框架而言，其中最关键的两件事是：
+
+1. 创建 ApplicationContext（mini-winter 的 IoC 容器）:负责组件扫描、实例化 bean、管理依赖等。
+2. 注册 DispatcherServlet 并将其映射到根路径 /: DispatcherServlet 在初始化时会获取 ApplicationContext (第一步中) 的引用，这使得它能够访问所有已扫描的控制器与服务组件。
+
+这样，当 WebApp 成功启动后，DispatcherServlet 成为整个 WebApp 的“前端控制器”（Front Controller）。当任意用户（例如用户 A）向该 WebApp 发送 HTTP 请求时，Tomcat 会根据 URL 匹配规则，将该请求交由 DispatcherServlet 处理。由于它被映射到 /，因此任何路径（除少量特殊情况外）都会被路由给它。
+
+DispatcherServlet 已经持有完整的 ApplicationContext，因此在处理请求时，它可以直接访问 mini-winter 框架中的控制器（Controller）、服务（Service）等组件，而无需依赖传统 Servlet API 的分发机制。请求的路由逻辑与后续业务处理，将完全由 mini-winter 框架内部的机制来完成。
 
 ## Thinking
 
