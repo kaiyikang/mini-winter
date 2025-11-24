@@ -12,8 +12,6 @@
 
     <artifactId>winter-web</artifactId>
 
-    <packaging>war</packaging>
-
     <dependencies>
         <dependency>
             <groupId>com.kaiyikang.winter</groupId>
