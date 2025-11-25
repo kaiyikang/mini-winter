@@ -2,7 +2,10 @@ package com.kaiyikang.winter.web.utils;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -13,7 +16,9 @@ import com.kaiyikang.winter.io.PropertyResolver;
 import com.kaiyikang.winter.utils.ClassPathUtils;
 import com.kaiyikang.winter.utils.YamlUtils;
 import com.kaiyikang.winter.web.DispatcherServlet;
+import com.kaiyikang.winter.web.FilterRegistrationBean;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.ServletContext;
 
 public class WebUtils {
@@ -36,6 +41,29 @@ public class WebUtils {
         var dispatcherReg = servletContext.addServlet("dispatcherServlet", dispatcherServlet);
         dispatcherReg.addMapping("/");
         dispatcherReg.setLoadOnStartup(0);
+    }
+
+    public static void registerFilters(ServletContext servletContext) {
+        var applicationContext = ApplicationContextUtils.getApplicationContext();
+        // Register all Filter which implements FilterRegistrationBean
+        for (var filterRegBean : applicationContext.getBeans(FilterRegistrationBean.class)) {
+            List<String> urlPatterns = filterRegBean.getUrlPatterns();
+
+            if (urlPatterns == null || urlPatterns.isEmpty()) {
+                throw new IllegalArgumentException("No url patterns for {}" + filterRegBean.getClass().getName());
+            }
+
+            var filter = Objects.requireNonNull(filterRegBean.getFilter(),
+                    "FilterRegistrationBean.getFilter() must not return null.");
+            logger.info("register filter '{}' {} for URLs: {}",
+                    filterRegBean.getName(),
+                    filter.getClass().getName(),
+                    String.join(", ", urlPatterns));
+
+            var filterReg = servletContext.addFilter(filterRegBean.getName(), filter);
+            filterReg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true,
+                    urlPatterns.toArray(String[]::new));
+        }
     }
 
     public static PropertyResolver createPropertyResolver() {
