@@ -1,22 +1,29 @@
 package com.kaiyikang.winter.web;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.util.ClassUtil;
 import com.kaiyikang.winter.annotation.Controller;
 import com.kaiyikang.winter.annotation.GetMapping;
+import com.kaiyikang.winter.annotation.PathVariable;
 import com.kaiyikang.winter.annotation.PostMapping;
+import com.kaiyikang.winter.annotation.RequestBody;
+import com.kaiyikang.winter.annotation.RequestParam;
 import com.kaiyikang.winter.annotation.ResponseBody;
 import com.kaiyikang.winter.annotation.RestController;
 import com.kaiyikang.winter.context.ApplicationContext;
@@ -26,6 +33,7 @@ import com.kaiyikang.winter.exception.NestedRuntimeException;
 import com.kaiyikang.winter.exception.ServerErrorException;
 import com.kaiyikang.winter.exception.ServerWebInputException;
 import com.kaiyikang.winter.io.PropertyResolver;
+import com.kaiyikang.winter.utils.ClassUtils;
 import com.kaiyikang.winter.web.utils.JsonUtils;
 import com.kaiyikang.winter.web.utils.PathUtils;
 import com.kaiyikang.winter.web.utils.WebUtils;
@@ -36,6 +44,7 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 public class DispatcherServlet extends HttpServlet {
 
@@ -159,7 +168,8 @@ public class DispatcherServlet extends HttpServlet {
         }
     }
 
-    void doService(String url, HttpServletRequest req, HttpServletResponse resp, List<Dispatcher> dispatchers) {
+    void doService(String url, HttpServletRequest req, HttpServletResponse resp, List<Dispatcher> dispatchers)
+            throws Exception {
         for (Dispatcher dispatcher : dispatchers) {
             Result result = dispatcher.process(url, req, resp);
             // find the first true
@@ -170,9 +180,9 @@ public class DispatcherServlet extends HttpServlet {
             if (dispatcher.isRest) {
                 handleRestResult(url, resp, dispatcher, r);
             } else {
-                handleMvcResult(url, resp, dispatcher, r);
+                handleMvcResult(url, req, resp, dispatcher, r);
             }
-            // already handled
+            // exist one dispatcher to handle, return it directly
             return;
         }
 
@@ -237,14 +247,27 @@ public class DispatcherServlet extends HttpServlet {
 
             throw new ServletException("Unable to process String result when handle url: " + url);
         }
+
         // byte[]
         if (r instanceof byte[] data) {
+            if (dispatcher.isResponseBody) {
+                ServletOutputStream output = resp.getOutputStream();
+                output.write(data);
+                output.flush();
+                return;
+            }
+            throw new ServletException("Unable to process byte[] result when handle url: " + url);
 
         }
 
         // ModelAndView
         if (r instanceof ModelAndView mv) {
-
+            String view = mv.getViewName();
+            if (view.startsWith("redirect:")) {
+                resp.sendRedirect(view.substring(9));
+            } else {
+                this.viewResolver.render(view, mv.getModel(), req, resp);
+            }
             return;
         }
 
@@ -318,7 +341,71 @@ public class DispatcherServlet extends HttpServlet {
         }
 
         Result process(String url, HttpServletRequest request, HttpServletResponse response) throws Exception {
+            // Dispatcher 会保存编译后的 URL 正则表达式
+            // 匹配时会用这个正则匹配当前请求的原始 URL
+            Matcher matcher = urlPattern.matcher(url);
 
+            // 不匹配，即不是当前的URL处理者，请尝试下一个
+            if (!matcher.matches()) {
+                return NOT_PROCESSED;
+            }
+
+            // 匹配，开始处理
+            Object[] arguments = new Object[this.methodParameters.length];
+            // 提取 controller 的实际参数，并转化为目标类型
+            for (int i = 0; i < arguments.length; i++) {
+                Param param = methodParameters[i];
+                arguments[i] = switch (param.paramType) {
+                    case PATH_VARIABLE -> {
+                        try {
+                            String s = matcher.group(param.name);
+                            yield convertToType(param.classType, s);
+                        } catch (IllegalArgumentException e) {
+                            throw new ServerWebInputException("Path variable '" + param.name + "' not found.");
+                        }
+                    }
+                    case REQUEST_BODY -> {
+                        BufferedReader reader = request.getReader();
+                        yield JsonUtils.readJson(reader, param.classType);
+                    }
+                    case REQUEST_PARAM -> {
+                        String s = getOrDefault(request, param.name, param.defaultValue);
+                        yield convertToType(param.classType, s);
+                    }
+                    case SERVLET_VARIABLE -> {
+                        Class<?> classType = param.classType;
+                        if (classType == HttpServletRequest.class) {
+                            yield request;
+                        } else if (classType == HttpServletResponse.class) {
+                            yield response;
+                        } else if (classType == HttpSession.class) {
+                            yield request.getSession();
+                        } else if (classType == ServletContext.class) {
+                            yield request.getServletContext();
+                        } else {
+                            throw new ServerErrorException("Could not determine argument type: " + classType);
+
+                        }
+                    }
+                };
+            }
+            // 触发controller，并获得结果
+            Object result = null;
+            try {
+                result = this.handlerMethod.invoke(this.controller, arguments);
+            } catch (InvocationTargetException e) {
+                // 异常解包（unwrap）
+                Throwable t = e.getCause();
+                if (t instanceof Exception ex) {
+                    throw ex;
+                }
+                // JVM 的错误
+                throw e;
+            } catch (ReflectiveOperationException e) {
+                throw new ServerErrorException(e);
+            }
+            // 封装最后的结果
+            return new Result(true, result);
         }
 
         Object convertToType(Class<?> classType, String s) {
@@ -364,14 +451,48 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     static class Param {
+
         String name;
         ParamType paramType;
         Class<?> classType;
         String defaultValue;
 
+        /*
+         * 这是修饰method中的param的，它可以来自url，来自query或是body
+         */
         public Param(String httpMethod, Method method, Parameter parameter, Annotation[] annotations)
                 throws ServletException {
+            PathVariable pv = ClassUtils.getAnnotation(annotations, PathVariable.class);
+            RequestParam rp = ClassUtils.getAnnotation(annotations, RequestParam.class);
+            RequestBody rb = ClassUtils.getAnnotation(annotations, RequestBody.class);
 
+            int total = (pv == null ? 0 : 1) + (rp == null ? 0 : 1) + (rb == null ? 0 : 1);
+            if (total > 1) {
+                throw new ServletException(
+                        "Annotation @PathVariable, @RequestParam and @RequestBody cannot be combined at method: "
+                                + method);
+            }
+            this.classType = parameter.getType();
+            if (pv != null) {
+                this.name = pv.value();
+                this.paramType = ParamType.PATH_VARIABLE;
+            } else if (rp != null) {
+                this.name = rp.value();
+                this.defaultValue = rp.defaultValue();
+                this.paramType = ParamType.REQUEST_PARAM;
+            } else if (rb != null) {
+                this.paramType = ParamType.REQUEST_BODY;
+            } else {
+                // test(HttpServletRequest req, HttpServletResponse resp)
+                this.paramType = ParamType.SERVLET_VARIABLE;
+                if (this.classType != HttpServletRequest.class
+                        && this.classType != HttpServletResponse.class
+                        && this.classType != HttpSession.class
+                        && this.classType != ServletContext.class) {
+                    throw new ServerErrorException(
+                            "(Missing annotation?) Unsupported argument type: " + classType + " at method: " + method);
+                }
+            }
         }
 
         @Override
