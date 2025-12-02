@@ -168,6 +168,7 @@ public class DispatcherServlet extends HttpServlet {
         }
     }
 
+    // === Begin of doService ===
     void doService(String url, HttpServletRequest req, HttpServletResponse resp, List<Dispatcher> dispatchers)
             throws Exception {
         for (Dispatcher dispatcher : dispatchers) {
@@ -277,6 +278,8 @@ public class DispatcherServlet extends HttpServlet {
                     "Unable to process " + r.getClass().getName() + " result when handle url: " + url);
         }
     }
+
+    // === End of doService ===
 
     /* 寻找/webapps/myapp/static/*的资源，并返回给浏览器 */
     void doResource(String url, HttpServletRequest req, HttpServletResponse resp) throws IOException {
