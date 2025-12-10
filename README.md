@@ -295,15 +295,17 @@ Furthermore, you still need to create static files, and crucially, provide the c
 
 Finally, to deploy the application, you only need to place the generated WAR file into your Tomcat's webapps directory. Once the server is running, you can view the web application by navigating to `localhost:8080` in your browser.
 
-## Winter Boot
+### Winter Boot
 
-在上一个章节中，我们已经实现了一个 webapp。在实际的开发和使用中，我们还是需要打包，复制，在启动 tomcat 等流程，非常的复杂。为了简化流程，我们可以直接将 webapp 的开发应用直接与 winter 结合，形成最终的 winter boot。不需要安装 tomcat，不需要复制 war，只需要 jar 就可以直接运行。
+In the previous chapter, we successfully implemented a web application. However, in a traditional development and deployment scenario, the workflow involves packaging the application, copying files, and manually starting an external Tomcat server, which can be quite complex. To simplify this process, we can integrate the web application directly with the Winter framework to create the final "Winter Boot". This eliminates the need to install an external Tomcat or copy WAR files; the application can be run directly from a single JAR file.
 
 ### Start the embedded Tomcat
 
-当运行整个程序的时候，WinterApplication.run()的时候，就启动 tomcat。由于我们无法配置 web.xml 因此，使用 addWebapp 和 WebResourceRoot 告诉手动设置编译好文件的路径。
+When the program executes `WinterApplication.run()`, it initiates the **embedded Tomcat**.
 
-然后创建 ServletContainerInitializer，tomcat 会在 start 的使用它，包含了创建 AnnotationConfigApplicationContext 的过程，以及 WebUtils.registerDispatcherServlet 注册 DispatcherServlet 的过程。
+Since we are bypassing the traditional `web.xml` configuration, we must use `addWebapp` and `WebResourceRoot` to manually **mount the file system** and map the virtual paths to the physical location of our compiled class files.
+
+Subsequently, we register a `ServletContainerInitializer`. Tomcat triggers this initializer during its startup phase. This hook is responsible for the critical bootstrap process: creating the `AnnotationConfigApplicationContext` (initializing the IoC container) and invoking `WebUtils.registerDispatcherServlet` to register the DispatcherServlet.
 
 ## Thinking
 
@@ -325,3 +327,4 @@ Finally, to deploy the application, you only need to place the generated WAR fil
 2025.11.23 Boot WebApp Done
 2025.12.10 Implement of MVC Done
 2025.12.10 Create WebApp Done
+2025.12.10 Start the embedded Tomcat Done
