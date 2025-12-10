@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class MvcController {
+
     final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
@@ -30,7 +31,7 @@ public class MvcController {
     ModelAndView index(HttpSession session) {
         User user = (User) session.getAttribute(USER_SESSION_KEY);
         if (user == null) {
-            return new ModelAndView("redirect:register");
+            return new ModelAndView("redirect:/register");
         }
         return new ModelAndView("/index.html", Map.of("user", user));
     }
@@ -41,9 +42,7 @@ public class MvcController {
     }
 
     @PostMapping("/register")
-    ModelAndView doRegister(
-            @RequestParam("email") String email,
-            @RequestParam("name") String name,
+    ModelAndView doRegister(@RequestParam("email") String email, @RequestParam("name") String name,
             @RequestParam("password") String password) {
         try {
             userService.createUser(email, name, password);
@@ -68,7 +67,8 @@ public class MvcController {
                 throw new DataAccessException("bad password.");
             }
         } catch (DataAccessException e) {
-            return new ModelAndView("/signin.html", Map.of("error", "Bad email of password."));
+            // user not found:
+            return new ModelAndView("/signin.html", Map.of("error", "Bad email or password."));
         }
         session.setAttribute(USER_SESSION_KEY, user);
         return new ModelAndView("redirect:/");
@@ -79,4 +79,5 @@ public class MvcController {
         session.removeAttribute(USER_SESSION_KEY);
         return "redirect:/signin";
     }
+
 }

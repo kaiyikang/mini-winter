@@ -22,6 +22,7 @@ public class ContextLoaderListener implements ServletContextListener {
         logger.info("init {}.", getClass().getName());
         var servletContext = event.getServletContext();
         var propertyResolver = WebUtils.createPropertyResolver();
+        WebMvcConfiguration.setServletContext(servletContext);
 
         // Setup encoding
         String encoding = propertyResolver.getProperty("${winter.web.character-encoding:UTF-8}");
