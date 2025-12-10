@@ -272,6 +272,29 @@ protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws Se
 
 Finally, within `handleRestResult` and `handleMvcResult`, we process the return values from the dispatchers based on their specific types. A `void` return type indicates that the request has been handled internally, whereas a `String` might represent a view name or trigger a redirection if it starts with "redirect:". Additionally, a `String` or `byte[]` accompanied by `@ResponseBody` implies the content is written directly to the response, while a `ModelAndView` object signifies an MVC response containing both model and view data that requires rendering by the `FreeMarkerViewResolver`.
 
+### Create WebApp
+
+首先在 scr/main/resources 中创建 application.yml:
+
+```yml
+app:
+  title: Hello Application
+  version: 1.0
+
+winter:
+  datasource:
+    url: jdbc:sqlite:test.db
+    driver-class-name: org.sqlite.JDBC
+    username: sa
+    password:
+```
+
+接下来创建 HelloConfiguration 配置类，以及相关的 Service 和 Controller 作为 Bean。
+
+Service 中创建和 User 数据库有关的服务。Web 中创建 Controller 和 Filter。
+
+接下来还需要创建静态的文件，以及为 Tomcat 等 web 容器提供配置，即 web.xml 文件。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.

@@ -1,0 +1,10 @@
+app:
+  title: Hello Application
+  version: 1.0
+
+winter:
+  datasource:
+    url: jdbc:sqlite:test.db
+    driver-class-name: org.sqlite.JDBC
+    username: sa
+    password:
