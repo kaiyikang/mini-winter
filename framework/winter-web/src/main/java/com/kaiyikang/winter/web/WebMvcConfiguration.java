@@ -14,7 +14,7 @@ public class WebMvcConfiguration {
 
     private static ServletContext servletContext = null;
 
-    static void setServletContext(ServletContext ctx) {
+    public static void setServletContext(ServletContext ctx) {
         servletContext = ctx;
     }
 

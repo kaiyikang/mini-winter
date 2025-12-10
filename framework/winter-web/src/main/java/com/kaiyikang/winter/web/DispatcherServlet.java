@@ -155,6 +155,7 @@ public class DispatcherServlet extends HttpServlet {
             doService(url, req, resp, dispatchers);
         } catch (ErrorResponseException e) {
             logger.warn("process request failed with status " + e.statusCode + " : " + url, e);
+            // 为了防止上一步已经先行写入，需要做判断
             if (!resp.isCommitted()) {
                 resp.resetBuffer();
                 resp.sendError(e.statusCode);
@@ -205,6 +206,7 @@ public class DispatcherServlet extends HttpServlet {
                 PrintWriter pw = resp.getWriter();
                 pw.write(s);
                 pw.flush();
+                return;
             }
             // 发送字节数据
             if (r instanceof byte[] data) {

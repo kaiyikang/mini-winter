@@ -202,7 +202,7 @@ Consequently, utility methods like `TransactionalUtils.getCurrentConnection()` c
 
 ### Boot WebApp
 
-In this chapter, our goal is to create a WebApp using the current mini-winter framework and package it as a WAR (Web Application Archive) file. When the Tomcat server starts, it will scan for and load this WAR file, ensuring that when the corresponding URL is accessed in a browser, the WebApp's response is correctly displayed.
+In this section, our goal is to create a WebApp using the current mini-winter framework and package it as a WAR (Web Application Archive) file. When the Tomcat server starts, it will scan for and load this WAR file, ensuring that when the corresponding URL is accessed in a browser, the WebApp's response is correctly displayed.
 
 A typical Java web application adheres to the Servlet Specification. The Servlet Specification defines not only the interfaces that a WebApp must implement but also how a web server (like Tomcat) should load the WebApp, the order in which requests are processed, and how various components are invoked. This establishes a clear decoupling model. The Servlet Specification defines three core component types:
 
@@ -233,6 +233,45 @@ Thus, once the WebApp has started successfully, the `DispatcherServlet` acts as 
 
 The `DispatcherServlet` already holds a complete reference to the `ApplicationContext`. Therefore, when processing a request, it can directly access components within the mini-winter framework, such as Controllers and Services, without relying on the traditional dispatching mechanisms of the Servlet API. The request routing and subsequent business logic are handled entirely by the internal mechanisms of the mini-winter framework.
 
+### Implement of MVC
+
+In this section, we will refine the `DispatcherServlet` by first defining annotations such as `@Controller` and `@RestController` to mark classes and then creating annotations like `@GetMapping` to decorate methods. These methods bind to specific endpoint paths, as shown in the following example:
+
+```java
+@GetMapping("/hello/{name}")
+    @ResponseBody
+    String hello(@PathVariable("name") String name) {
+        return "Hello, " + name;
+    }
+```
+
+Consequently, the `DispatcherServlet` takes charge of scanning for all classes annotated with `@Controller` or `@RestController` while defining "dispatchers" that act as handlers for specific URLs. We also define the parameters for these methods and categorize them into four distinct types, which include `PATH_VARIABLE` for path parameters extracted from the URL, `REQUEST_PARAM` for parameters extracted from the query string or form data, `REQUEST_BODY` for data extracted from JSON payloads in POST requests, and `SERVLET_VARIABLE` for standard objects retrieved via the `HttpServletRequest` API.
+
+We utilize reflection to inspect the methods and register these dispatcher instances, as illustrated below:
+
+```java
+PostMapping post = m.getAnnotation(PostMapping.class);
+            if (post != null) {
+                checkMethod(m);
+                this.postDispatchers.add(new Dispatcher("POST", isRest, instance, m, post.value()));
+            }
+```
+
+Subsequently, we can invoke the logic within the `doGet` method because it overrides the standard `HttpServlet` implementation. This method distinguishes between handling static resource files and processing regular service requests:
+
+```java
+protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String url = req.getRequestURI();
+        if (url.equals(this.faviconPath) || url.startsWith(this.resourcePath)) {
+            doResource(url, req, resp);
+        } else {
+            doService(req, resp, getDispatchers);
+        }
+    }
+```
+
+Finally, within `handleRestResult` and `handleMvcResult`, we process the return values from the dispatchers based on their specific types. A `void` return type indicates that the request has been handled internally, whereas a `String` might represent a view name or trigger a redirection if it starts with "redirect:". Additionally, a `String` or `byte[]` accompanied by `@ResponseBody` implies the content is written directly to the response, while a `ModelAndView` object signifies an MVC response containing both model and view data that requires rendering by the `FreeMarkerViewResolver`.
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
@@ -251,3 +290,4 @@ The `DispatcherServlet` already holds a complete reference to the `ApplicationCo
 2025.11.03 JdbcTemplate Done
 2025.11.04 Transactional Done
 2025.11.23 Boot WebApp Done
+2025.12.10 Implement of MVC Done
