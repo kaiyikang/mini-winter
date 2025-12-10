@@ -274,26 +274,26 @@ Finally, within `handleRestResult` and `handleMvcResult`, we process the return 
 
 ### Create WebApp
 
-首先在 scr/main/resources 中创建 application.yml:
+First, create the application.yml file within the src/main/resources directory:
 
-```yml
+```YAML
 app:
-  title: Hello Application
-  version: 1.0
+    title: Hello Application
+    version: 1.0
 
 winter:
-  datasource:
-    url: jdbc:sqlite:test.db
-    driver-class-name: org.sqlite.JDBC
-    username: sa
-    password:
+    datasource:
+        url: jdbc:sqlite:test.db
+        driver-class-name: org.sqlite.JDBC
+        username: sa
+        password:
 ```
 
-接下来创建 HelloConfiguration 配置类，以及相关的 Service 和 Controller 作为 Bean。
+Next, you will create the core components , which include the HelloConfiguration class and related Service and Controller classes, these will be registered as Beans within the Mini Winter framework. The Service layer will be responsible for operations related to the User database. While the Web layer will house the Controller and Filter components.
 
-Service 中创建和 User 数据库有关的服务。Web 中创建 Controller 和 Filter。
+Furthermore, you still need to create static files, and crucially, provide the configuration for web containers like Tomcat via the necessary web.xml file.
 
-接下来还需要创建静态的文件，以及为 Tomcat 等 web 容器提供配置，即 web.xml 文件。
+Finally, to deploy the application, you only need to place the generated WAR file into your Tomcat's webapps directory. Once the server is running, you can view the web application by navigating to `localhost:8080` in your browser.
 
 ## Thinking
 
@@ -314,3 +314,4 @@ Service 中创建和 User 数据库有关的服务。Web 中创建 Controller �
 2025.11.04 Transactional Done
 2025.11.23 Boot WebApp Done
 2025.12.10 Implement of MVC Done
+2025.12.10 Create WebApp Done
