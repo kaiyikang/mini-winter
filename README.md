@@ -295,6 +295,12 @@ Furthermore, you still need to create static files, and crucially, provide the c
 
 Finally, to deploy the application, you only need to place the generated WAR file into your Tomcat's webapps directory. Once the server is running, you can view the web application by navigating to `localhost:8080` in your browser.
 
+## Winter Boot
+
+在上一个章节中，我们已经实现了一个 webapp。在实际的开发和使用中，我们还是需要打包，复制，在启动 tomcat 等流程，非常的复杂。为了简化流程，我们可以直接将 webapp 的开发应用直接与 winter 结合，形成最终的 winter boot。不需要安装 tomcat，不需要复制 war，只需要 jar 就可以直接运行。
+
+### Start the embedded Tomcat
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.

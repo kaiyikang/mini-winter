@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 
 import com.kaiyikang.winter.io.InputStreamCallback;
 
@@ -23,6 +24,13 @@ public class ClassPathUtils {
             e.printStackTrace();
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static String readString(String path) {
+        return readInputStream(path, (input) -> {
+            byte[] data = input.readAllBytes();
+            return new String(data, StandardCharsets.UTF_8);
+        });
     }
 
     static ClassLoader getContextClassLoader() {
