@@ -17,8 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import com.kaiyikang.winter.io.PropertyResolver;
 import com.kaiyikang.winter.utils.ClassPathUtils;
-import com.kaiyikang.winter.web.utils.WebUtils;
 import com.kaiyikang.winter.web.ContextLoaderInitializer;
+import com.kaiyikang.winter.web.utils.WebUtils;
 
 public class WinterApplication {
 
@@ -29,7 +29,8 @@ public class WinterApplication {
 
     public static void run(String webDir, String baseDir, Class<?> configClass, String... args) throws Exception {
         // webDir 静态文件的根目录在哪里
-        // baseDir - WebResourceRoot: 告诉Tomcat，/WEB-INF/classes对应的是baseDir路径
+        // baseDir - WebResourceRoot: 告诉Tomcat，/WEB-INF/classes对应的是baseDir路径，即编译后的
+        // .class 路径
         new WinterApplication().start(webDir, baseDir, configClass, args);
     }
 

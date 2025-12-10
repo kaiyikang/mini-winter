@@ -301,6 +301,10 @@ Finally, to deploy the application, you only need to place the generated WAR fil
 
 ### Start the embedded Tomcat
 
+当运行整个程序的时候，WinterApplication.run()的时候，就启动 tomcat。由于我们无法配置 web.xml 因此，使用 addWebapp 和 WebResourceRoot 告诉手动设置编译好文件的路径。
+
+然后创建 ServletContainerInitializer，tomcat 会在 start 的使用它，包含了创建 AnnotationConfigApplicationContext 的过程，以及 WebUtils.registerDispatcherServlet 注册 DispatcherServlet 的过程。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
