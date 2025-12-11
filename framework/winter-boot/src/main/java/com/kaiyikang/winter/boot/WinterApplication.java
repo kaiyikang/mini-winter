@@ -7,7 +7,6 @@ import java.util.Set;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Server;
-import org.apache.catalina.WebResource;
 import org.apache.catalina.WebResourceRoot;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.webresources.DirResourceSet;
@@ -65,7 +64,8 @@ public class WinterApplication {
         logger.info("starting Tomcat at port: {}...", port);
         Tomcat tomcat = new Tomcat();
         tomcat.getConnector().setThrowOnFailure(true);
-        Context ctx = tomcat.addWebapp("baseDir", new File(webDir).getAbsolutePath());
+
+        Context ctx = tomcat.addWebapp("", new File(webDir).getAbsolutePath());
         WebResourceRoot resources = new StandardRoot(ctx);
         resources.addPreResources(
                 new DirResourceSet(resources, "/WEB-INF/classes", new File(baseDir).getAbsolutePath(), "/"));

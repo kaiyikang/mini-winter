@@ -39,6 +39,10 @@ public class WebUtils {
         logger.info("register servlet {} for URL '/'", dispatcherServlet.getClass().getName());
 
         var dispatcherReg = servletContext.addServlet("dispatcherServlet", dispatcherServlet);
+
+        if (dispatcherReg == null) {
+            return;
+        }
         dispatcherReg.addMapping("/");
         dispatcherReg.setLoadOnStartup(0);
     }
