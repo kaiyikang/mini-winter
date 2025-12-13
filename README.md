@@ -307,7 +307,7 @@ Since we are bypassing the traditional `web.xml` configuration, we must use `add
 
 Subsequently, we register a `ServletContainerInitializer`. Tomcat triggers this initializer during its startup phase. This hook is responsible for the critical bootstrap process: creating the `AnnotationConfigApplicationContext` (initializing the IoC container) and invoking `WebUtils.registerDispatcherServlet` to register the DispatcherServlet.
 
-### Boot App
+### Implement Boot App
 
 代码中，我们使用 jarFile 来确定本次运行是通过 ide，还是打包完了之后使用 java -jar 运行的。webDir 和 baseDir 也会因此发生改变。前者是静态文件的地址，后者是 java 编译后文件的路径。
 

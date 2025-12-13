@@ -69,7 +69,9 @@ public class WinterApplication {
         ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());
 
         if (!new File(webDir).getAbsolutePath().equals(new File(baseDir).getAbsolutePath())) {
+            // if IDE
             WebResourceRoot resources = new StandardRoot(ctx);
+            // not /WEB-INF/classes, but baseDir = target/classes
             resources.addPreResources(
                     new DirResourceSet(resources, "/WEB-INF/classes", new File(baseDir).getAbsolutePath(), "/"));
             ctx.setResources(resources);
