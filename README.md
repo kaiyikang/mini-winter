@@ -306,26 +306,36 @@ When the program executes `WinterApplication.run()`, it initiates the **embedded
 Since we are bypassing the traditional `web.xml` configuration, we must use `addWebapp` and `WebResourceRoot` to manually **mount the file system** and map the virtual paths to the physical location of our compiled class files.
 
 Subsequently, we register a `ServletContainerInitializer`. Tomcat triggers this initializer during its startup phase. This hook is responsible for the critical bootstrap process: creating the `AnnotationConfigApplicationContext` (initializing the IoC container) and invoking `WebUtils.registerDispatcherServlet` to register the DispatcherServlet.
+Here is the polished English translation of your summary. I have ensured that technical terms like "Parent Delegation Model" and the logic behind the "Zombie Directory" issue are clearly expressed.
 
-### Implement Boot App
+### Implementing the Boot App
 
-代码中，我们使用 jarFile 来确定本次运行是通过 ide，还是打包完了之后使用 java -jar 运行的。webDir 和 baseDir 也会因此发生改变。前者是静态文件的地址，后者是 java 编译后文件的路径。
+In our code, we use the `jarFile` path to determine whether the application is running within an IDE or as a packaged artifact via `java -jar`. Consequently, the `webDir` (the path for static resources) and `baseDir` (the path for compiled Java files) are adjusted accordingly.
 
-如果我们按照原始教程完成了代码，如果使用 ide 运行会发现能够正常运行，但如果打包并运行代码会发现 java -jar ./target/hello-boot.war 运行不了，会显示 NoClassDefFoundError 的错误，比如：Exception in thread "main" java.lang.NoClassDefFoundError: com/kaiyikang/winter/boot/WinterApplication
+If we strictly follow the original tutorial, the code runs correctly within an IDE. However, executing the packaged artifact via `java -jar ./target/hello-boot.war` fails with a `NoClassDefFoundError`, such as:
+`Exception in thread "main" java.lang.NoClassDefFoundError: com/kaiyikang/winter/boot/WinterApplication`
 
-该错误出现的原因是，当我们使用 mvn clean package 打包好源代码以后，当 java -jar target/app.war 的时候，JVM 会获取 MANIFEST.MF，在其中看到了
+The error stems from the JVM startup process. After packaging the source code with `mvn clean package` and running the WAR file:
 
-- Main-Class：com.kaiyikang.hello.Main
-- Class-Path: tmp-webapp/WEB-INF/lib/...
+1.  The JVM reads the `MANIFEST.MF` file, which contains:
+    - `Main-Class: com.kaiyikang.hello.Main`
+    - `Class-Path: tmp-webapp/WEB-INF/lib/...`
+2.  At this precise moment (startup), the `tmp-webapp` directory **does not exist yet**.
+3.  Consequently, the JVM invalidates these paths (removes them from its internal classpath list) and proceeds to load only `Main.class` from the WAR.
+4.  Although `Main.java` executes and successfully extracts the files to create the `tmp-webapp` directory, the damage is done. When the code attempts to call `WinterApplication.run`, the JVM fails because the class was not in the initial classpath lookup, resulting in a `NoClassDefFoundError`.
 
-此时此刻，tmp-webapp 并不存在，于是 JVM 决定将这个路径作废，即在清单中清除，然后加载 WAR 中的 Main.class。现在开始执行原始 Main.java 中的代码，它依旧会工作，并正确的创建 tmp-webapp 文件夹。但是读到 WinterApplication.run 的时候，发现最开始的查找清单中根本没有它，因此直接报错 NoClassDefFoundError。
+To resolve this, we must manually create a new ClassLoader _after_ the WAR extraction (i.e., after `tmp-webapp` is created) and use it to load `WinterApplication`.
 
-为了解决这个问题，我们需要在解压完 war，即创建 tmp-webapp 之后，手动创建新的加载器，使用它再次读取 WinterApplication。
+We achieve this by instantiating a custom `appClassLoader` using `new URLClassLoader`. However, there are several critical pitfalls to address:
 
-通过使用 new URLClassLoader 的方式，创建出了 appClassLoader 来手动加载。这里面有一些值得注意的坑和细节。
+1.  **Tomcat Configuration:** Embedded Tomcat may not automatically recognize this custom ClassLoader and might default to the system loader. Therefore, inside `WinterApplication`, we must explicitly set the parent class loader for Tomcat:
+    `ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());`
 
-首先是 Tomcat 可能会不认该 classloader，还使用默认的方式，因此这里我们需要在 WinterApplication 中，为 Tomcat 设置 ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader()); 而另外一个最严重的问题是，僵尸目录。即上次运行的 temp-webapp 文件夹，被 JVM 偷偷的加入到了搜索路径，导致类被抢先的错误加载了。解决这个方案是使用隔离的方式，
-不使用 Main.class.getClassLoader()，而是直接询问平台类加载器 PlatformClassLoader，从而防止污染，确保我们的 URLClassLoader 可以加载最新最全的 jar 包。
+2.  **The "Zombie Directory" Issue:** This is the most critical problem. A "Zombie Directory" refers to a residual `tmp-webapp` folder remaining from a previous run. During startup, the JVM detects this existing folder and automatically adds it to the `AppClassLoader`'s search path. If our custom ClassLoader defaults to using `AppClassLoader` as its parent, Java's **Parent Delegation Model** dictates that the parent attempts to load the class first. The `AppClassLoader` will eagerly load the classes from the "zombie" directory (the old version), leading to version mismatches or missing dependency errors.
+
+We resolve this by implementing ClassLoader isolation. When creating the `URLClassLoader`, we explicitly set its parent to **`PlatformClassLoader`** (which is the parent of `AppClassLoader` and is only responsible for JDK extension libraries).
+
+This effectively cuts off the delegation to `AppClassLoader`, bypasses interference from the zombie directory, and forces our custom loader to load the freshly extracted Jar packages.
 
 ## Thinking
 
