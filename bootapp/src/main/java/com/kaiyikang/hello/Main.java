@@ -20,17 +20,16 @@ public class Main {
     public static void main(String[] args) throws Exception {
         // 向JVM了解，从哪里被加载出来，或是物理路径，或是压缩包的绝对路径
         String jarFile = Main.class.getProtectionDomain().getCodeSource().getLocation().getFile();
-        // 是否为打包
         boolean isJarFile = jarFile.endsWith(".war") || jarFile.endsWith(".jar");
 
-        // IDE
+        // If IDE
         String webDir = "src/main/webapp";
         String baseDir = jarFile;
 
         // 默认使用当前的加载器
         ClassLoader appClassLoader = Main.class.getClassLoader();
 
-        // JAR/WAR
+        // If JAR/WAR
         if (isJarFile) {
             webDir = "tmp-webapp-" + UUID.randomUUID().toString();
             baseDir = webDir;
@@ -58,8 +57,6 @@ public class Main {
             Thread.currentThread().setContextClassLoader(appClassLoader);
 
         }
-        // WinterApplication.run(webDir, isJarFile ? "tmp-webapp" : jarFile,
-        // HelloConfiguration.class);
 
         launchWinterByReflection(appClassLoader, webDir, baseDir, "com.kaiyikang.hello.HelloConfiguration", args);
     }
