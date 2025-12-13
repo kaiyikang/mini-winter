@@ -66,10 +66,15 @@ public class WinterApplication {
         tomcat.getConnector().setThrowOnFailure(true);
 
         Context ctx = tomcat.addWebapp("", new File(webDir).getAbsolutePath());
-        WebResourceRoot resources = new StandardRoot(ctx);
-        resources.addPreResources(
-                new DirResourceSet(resources, "/WEB-INF/classes", new File(baseDir).getAbsolutePath(), "/"));
-        ctx.setResources(resources);
+        ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());
+
+        if (!new File(webDir).getAbsolutePath().equals(new File(baseDir).getAbsolutePath())) {
+            WebResourceRoot resources = new StandardRoot(ctx);
+            resources.addPreResources(
+                    new DirResourceSet(resources, "/WEB-INF/classes", new File(baseDir).getAbsolutePath(), "/"));
+            ctx.setResources(resources);
+        }
+
         ctx.addServletContainerInitializer(new ContextLoaderInitializer(configClass, propertyResolver), Set.of());
         tomcat.start();
         logger.info("Tomcat started at port {}...", port);

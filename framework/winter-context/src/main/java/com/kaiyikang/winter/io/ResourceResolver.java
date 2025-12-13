@@ -7,6 +7,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -85,9 +87,10 @@ public class ResourceResolver {
         ClassLoader classLoader = null;
         classLoader = Thread.currentThread().getContextClassLoader();
         if (classLoader == null) {
-            classLoader = getClass().getClassLoader();
+            classLoader = this.getClass().getClassLoader();
         }
         return classLoader;
+        // return this.getClass().getClassLoader();
     }
 
     <R> void scanFile(boolean isJar, String base, Path root, List<R> collector, Function<Resource, R> mapper)
@@ -130,6 +133,14 @@ public class ResourceResolver {
     }
 
     Path jarUriToPath(URI jarUri, String rootPackagePathStr) throws IOException {
-        return FileSystems.newFileSystem(jarUri, Map.of()).getPath(rootPackagePathStr);
+        // return FileSystems.newFileSystem(jarUri,
+        // Map.of()).getPath(rootPackagePathStr);
+        FileSystem fs;
+        try {
+            fs = FileSystems.newFileSystem(jarUri, Map.of());
+        } catch (FileSystemAlreadyExistsException e) {
+            fs = FileSystems.getFileSystem(jarUri);
+        }
+        return fs.getPath(rootPackagePathStr);
     }
 }

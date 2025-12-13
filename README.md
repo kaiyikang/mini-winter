@@ -322,6 +322,11 @@ Subsequently, we register a `ServletContainerInitializer`. Tomcat triggers this 
 
 为了解决这个问题，我们需要在解压完 war，即创建 tmp-webapp 之后，手动创建新的加载器，使用它再次读取 WinterApplication。
 
+通过使用 new URLClassLoader 的方式，创建出了 appClassLoader 来手动加载。这里面有一些值得注意的坑和细节。
+
+首先是 Tomcat 可能会不认该 classloader，还使用默认的方式，因此这里我们需要在 WinterApplication 中，为 Tomcat 设置 ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader()); 而另外一个最严重的问题是，僵尸目录。即上次运行的 temp-webapp 文件夹，被 JVM 偷偷的加入到了搜索路径，导致类被抢先的错误加载了。解决这个方案是使用隔离的方式，
+不使用 Main.class.getClassLoader()，而是直接询问平台类加载器 PlatformClassLoader，从而防止污染，确保我们的 URLClassLoader 可以加载最新最全的 jar 包。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
