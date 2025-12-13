@@ -307,6 +307,21 @@ Since we are bypassing the traditional `web.xml` configuration, we must use `add
 
 Subsequently, we register a `ServletContainerInitializer`. Tomcat triggers this initializer during its startup phase. This hook is responsible for the critical bootstrap process: creating the `AnnotationConfigApplicationContext` (initializing the IoC container) and invoking `WebUtils.registerDispatcherServlet` to register the DispatcherServlet.
 
+### Boot App
+
+代码中，我们使用 jarFile 来确定本次运行是通过 ide，还是打包完了之后使用 java -jar 运行的。webDir 和 baseDir 也会因此发生改变。前者是静态文件的地址，后者是 java 编译后文件的路径。
+
+如果我们按照原始教程完成了代码，如果使用 ide 运行会发现能够正常运行，但如果打包并运行代码会发现 java -jar ./target/hello-boot.war 运行不了，会显示 NoClassDefFoundError 的错误，比如：Exception in thread "main" java.lang.NoClassDefFoundError: com/kaiyikang/winter/boot/WinterApplication
+
+该错误出现的原因是，当我们使用 mvn clean package 打包好源代码以后，当 java -jar target/app.war 的时候，JVM 会获取 MANIFEST.MF，在其中看到了
+
+- Main-Class：com.kaiyikang.hello.Main
+- Class-Path: tmp-webapp/WEB-INF/lib/...
+
+此时此刻，tmp-webapp 并不存在，于是 JVM 决定将这个路径作废，即在清单中清除，然后加载 WAR 中的 Main.class。现在开始执行原始 Main.java 中的代码，它依旧会工作，并正确的创建 tmp-webapp 文件夹。但是读到 WinterApplication.run 的时候，发现最开始的查找清单中根本没有它，因此直接报错 NoClassDefFoundError。
+
+为了解决这个问题，我们需要在解压完 war，即创建 tmp-webapp 之后，手动创建新的加载器，使用它再次读取 WinterApplication。
+
 ## Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.

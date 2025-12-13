@@ -22,6 +22,7 @@ public class Main {
 
         // 找到 webapp的根目录: 生产模式/开发模式
         String webDir = isJarFile ? "tmp-webapp" : "src/main/webapp";
+
         if (isJarFile) {
 
             Path baseDir = Paths.get(webDir).normalize().toAbsolutePath();
@@ -52,6 +53,6 @@ public class Main {
                 }
             }));
         }
-        WinterApplication.run(webDir, isJarFile ? "tmp-webapp" : "src/main/webapp", HelloConfiguration.class);
+        WinterApplication.run(webDir, isJarFile ? "tmp-webapp" : jarFile, HelloConfiguration.class);
     }
 }

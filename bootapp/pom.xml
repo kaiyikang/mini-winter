@@ -67,7 +67,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>tmp-webapp/WEB-INF/lib/</classpathPrefix>
-                            <mainClass>com.winter.hello.Main</mainClass>
+                            <mainClass>com.kaiyikang.hello.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
