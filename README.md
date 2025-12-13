@@ -358,3 +358,4 @@ This effectively cuts off the delegation to `AppClassLoader`, bypasses interfere
 2025.12.10 Implement of MVC Done
 2025.12.10 Create WebApp Done
 2025.12.10 Start the embedded Tomcat Done
+2025.12.13 Implementing the Boot App Done
