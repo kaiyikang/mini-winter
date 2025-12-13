@@ -201,3 +201,4 @@ README.html
 .exercism
 
 apache-tomcat-11.0.15/
+*.db

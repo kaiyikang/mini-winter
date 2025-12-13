@@ -27,9 +27,9 @@ public class WinterApplication {
     final Logger logger = LoggerFactory.getLogger(getClass());
 
     public static void run(String webDir, String baseDir, Class<?> configClass, String... args) throws Exception {
-        // webDir 静态文件的根目录在哪里
-        // baseDir - WebResourceRoot: 告诉Tomcat，/WEB-INF/classes对应的是baseDir路径，即编译后的
-        // .class 路径
+        // webDir - 静态文件根目录，使用ide开发在src/main/webapp，使用jar在tmp-webpp中
+        // baseDir - java文件路径:
+        // ide开发在target/classes中，只用jar在tmp-webapp/WEB-INF/classes对应的是baseDir路径
         new WinterApplication().start(webDir, baseDir, configClass, args);
     }
 
