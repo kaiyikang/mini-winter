@@ -306,7 +306,6 @@ When the program executes `WinterApplication.run()`, it initiates the **embedded
 Since we are bypassing the traditional `web.xml` configuration, we must use `addWebapp` and `WebResourceRoot` to manually **mount the file system** and map the virtual paths to the physical location of our compiled class files.
 
 Subsequently, we register a `ServletContainerInitializer`. Tomcat triggers this initializer during its startup phase. This hook is responsible for the critical bootstrap process: creating the `AnnotationConfigApplicationContext` (initializing the IoC container) and invoking `WebUtils.registerDispatcherServlet` to register the DispatcherServlet.
-Here is the polished English translation of your summary. I have ensured that technical terms like "Parent Delegation Model" and the logic behind the "Zombie Directory" issue are clearly expressed.
 
 ### Implementing the Boot App
 

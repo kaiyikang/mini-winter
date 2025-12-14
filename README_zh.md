@@ -296,11 +296,11 @@ winter:
     password:
 ```
 
-接下来，您将创建核心组件，其中包括 HelloConfiguration 类以及相关的 Service 和 Controller 类，这些类将被注册为 Mini Winter 框架内的 Bean。Service 层将负责与 User 数据库相关的操作。而 Web 层将包含 Controller 和 Filter 组件。
+接下来，我们将创建核心组件，其中包括 HelloConfiguration 类以及相关的 Service 和 Controller 类，这些类将被注册为 Mini Winter 框架内的 Bean。Service 层将负责与 User 数据库相关的操作。而 Web 层将包含 Controller 和 Filter 组件。
 
-此外，您仍然需要创建静态文件，而且至关重要的是，通过必要的 web.xml 文件为 Web 容器（如 Tomcat）提供配置。
+此外，我们仍然需要创建静态文件，而且至关重要的是，通过必要的 web.xml 文件为 Web 容器（如 Tomcat）提供配置。
 
-最后，要部署应用程序，您只需要将生成的 WAR 文件放入 Tomcat 的 webapps 目录中。服务器运行后，您可以通过在浏览器中导航到 `localhost:8080` 来查看 Web 应用程序。
+最后，要部署应用程序，我们只需要将生成的 WAR 文件放入 Tomcat 的 webapps 目录中。服务器运行后，可以通过在浏览器中导航到 `localhost:8080` 来查看 Web 应用程序。
 
 ### Winter Boot
 
@@ -314,11 +314,9 @@ winter:
 
 随后，我们注册一个 `ServletContainerInitializer`。Tomcat 在其启动阶段会触发此初始化器。这个钩子负责关键的引导过程：创建 `AnnotationConfigApplicationContext`（初始化 IoC 容器）并调用 `WebUtils.registerDispatcherServlet` 来注册 DispatcherServlet。
 
-这里是您总结的润色后的中文翻译。我确保了诸如“父类委托模型”等技术术语以及“僵尸目录”问题背后的逻辑得到了清晰的表达。
-
 ### 实现 Boot 应用 (Implementing the Boot App)
 
-在我们的代码中，我们使用 `jarFile` 路径来判断应用程序是在 IDE 中运行还是作为打包的构件通过 `java -jar` 运行。因此，`webDir`（静态资源路径）和 `baseDir`（编译后的 Java 文件路径）会相应地进行调整。
+在代码中，我们使用 `jarFile` 路径来判断应用程序是在 IDE 中运行还是作为打包的构件通过 `java -jar` 运行。因此，`webDir`（静态资源路径）和 `baseDir`（编译后的 Java 文件路径）会相应地进行调整。
 
 如果我们严格按照原始教程操作，代码在 IDE 中可以正确运行。但是，通过 `java -jar ./target/hello-boot.war` 执行打包后的构件会失败，并出现 `NoClassDefFoundError`，例如：
 `Exception in thread "main" java.lang.NoClassDefFoundError: com/kaiyikang/winter/boot/WinterApplication`
