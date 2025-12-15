@@ -27,7 +27,7 @@ List<String> classList = resolver.scan(res -> {
 
 其中 scan 会扫描所有的文件，我们需要将文件到类名的映射函数作为参数传进去。这里使用了函数式编程，类型是`Function<Resource, R>`。
 
-在单元测试中，编译后的测试类位于测试类路径（classpath）下（例如 Maven 的：`target/test-classes/com/kaiyikang/scan/*`），而资源文件则会被复制到具有相同包结构的同一类路径根目录下（例如：`target/test-classes/com/kaiyikang/scan/sub1.txt`）。
+在单元测试中，编译后的测试类位于测试类路径（classpath）下（例如 Maven 的：`target/test-classes/com/kaiyikang/scan/*`），而资源文件则会被复制到具有相同包结构的同一类路径根目录下。
 
 ### 属性解析器 (Property Resolver)
 
@@ -43,12 +43,12 @@ List<String> classList = resolver.scan(res -> {
 
 Bean 主要通过两种方式定义：
 
-1.  **基于类的 Bean (Class-based Beans)**：当一个类被标注了如 `@Component` 这样的构造型注解时，该类本身即作为 Bean 的定义。
-2.  **工厂方法 Bean (Factory-method Beans)**：在 `@Configuration` 类中，标注了 `@Bean` 的方法充当创建 Bean 的工厂。
+1. **基于类的 Bean (Class-based Beans)**：当一个类被标注了如 `@Component` 这样的构造型注解时，该类本身即作为 Bean 的定义。
+2. **工厂方法 Bean (Factory-method Beans)**：在 `@Configuration` 类中，标注了 `@Bean` 的方法充当创建 Bean 的工厂。
 
 值得注意的是，`BeanDefinition` 中的 `beanClass` 字段存储的是 Bean 的**声明类型**（例如接口），而不是其实际的运行时类型（例如实现类）。这个声明类型对于依赖注入和类型查找至关重要，而实际类型只能在创建后通过 `instance.getClass()` 确定。
 
-在开发 Bean 加载和初始化逻辑的过程中，我们非常强调健壮性。前置条件验证采用了**快速失败 (fail-fast)** 策略，以便尽早捕获配置错误，防止在运行时出现难以诊断的 `NullPointerExceptions`。
+在开发 Bean 加载和初始化逻辑的过程中，健壮性非常重要。前置条件验证采用了**快速失败 (fail-fast)** 策略，以便尽早捕获配置错误，防止在运行时出现难以诊断的 `NullPointerExceptions`。
 
 `AnnotationConfigApplicationContext` 的目的是扫描并收集所有带有有效注解的类，创建相应的 `BeanDefinition`，并将它们组织到一个以 Bean 名称为索引的内部注册表（Map）中。然后，它使用此注册表来定位并在请求时提供 Bean 实例。
 
@@ -58,8 +58,8 @@ Bean 主要通过两种方式定义：
 
 这导致了一个两阶段的 Bean 创建过程：
 
-1.  **实例化 (Instantiation)：** 通过调用构造函数创建 Bean 实例，解决所有强依赖。
-2.  **填充 (Population)：** 随后通过 Setter 和字段注入，将弱依赖填充到实例中。
+1. **实例化 (Instantiation)：** 通过调用构造函数创建 Bean 实例，解决所有强依赖。
+2. **填充 (Population)：** 随后通过 Setter 和字段注入，将弱依赖填充到实例中。
 
 关于 API 命名约定：`get` 方法预期总是返回一个对象（或抛出异常），而 `find` 方法如果未找到对象则可能返回 `null`。参见 `getBean` 和 `findBean` 的实际示例。
 
@@ -69,10 +69,10 @@ Bean 主要通过两种方式定义：
 
 当前的流程如下：
 
-1.  创建 Bean 定义。
-2.  根据定义创建实例。
-3.  将其他实例注入到该实例中。
-4.  完整的 Bean 准备就绪。
+1. 创建 Bean 定义。
+2. 根据定义创建实例。
+3. 将其他实例注入到该实例中。
+4. 完整的 Bean 准备就绪。
 
 现在出现了一个新需求：如果我们需要替换一个 Bean 或向已实例化的 Bean 添加新逻辑，因此我们需要使用 `BeanPostProcessor`，而这发生在步骤 2 和 3 。
 
@@ -105,35 +105,35 @@ version = null
 
 **面向切面编程 (AOP)** 为已组装的 Bean 对象添加额外的通用功能。这些功能的特点是不属于核心业务逻辑，但它横切了不同业务领域的方法。AOP 为 Bean 添加了一个代理层。当调用 Bean 的方法时，首先调用代理的方法，代理再让 Bean 处理请求，最后可以添加一些收尾工作。
 
-有三种实现方式：
+其中有三种实现方式：
 
-- **编译时 (Compile-time)**：“附加”代码在编译期间直接织入 `.class` 文件。性能最好但最复杂，需要特殊的编译器。
-- **加载时 (Load-time)**：当 `.class` 文件加载到 JVM 内存时被拦截，并注入“附加”逻辑。这种方式很灵活，但需要了解 JVM 的类加载机制。
-- **运行时 (Run-time)**：“附加”代码是一个普通的 Java 类，作为 Bean 的代理对象动态生成。这是最常见也是最简单的方法。
+- **编译时 (Compile-time)**：「附加」代码在编译期间直接织入 `.class` 文件。性能最好但最复杂，需要特殊的编译器。
+- **加载时 (Load-time)**：当 `.class` 文件加载到 JVM 内存时被拦截，并注入「附加」逻辑。这种方式很灵活，但需要了解 JVM 的类加载机制。
+- **运行时 (Run-time)**：「附加」代码是一个普通的 Java 类，作为 Bean 的代理对象动态生成。这是最常见也是最简单的方法。
 
-mini-winter 仅支持基于注解的方式，即 Bean 清楚地知道它拥有什么“附加”功能。它支持代理所有类型的类，并使用 Byte Buddy 作为其实现机制。
+mini-winter 仅支持基于注解的方式，即 Bean 清楚地知道它拥有什么「附加」」功能。它支持代理所有类型的类，并使用 Byte Buddy 作为其实现机制。
 
 ### 代理解析器 (ProxyResolver)
 
 两件事至关重要：
 
-1.  原始 Bean。
-2.  拦截器 (Interceptor)：它拦截目标 Bean 的方法调用，并自动调用拦截器以实现代理功能。
+1. 原始 Bean。
+2. 拦截器 (Interceptor)：它拦截目标 Bean 的方法调用，并自动调用拦截器以实现代理功能。
 
 执行流程如下：
 
-1.  调用代理的方法。
-2.  代理将调用转发给拦截器。
-3.  拦截器执行其额外逻辑，并决定何时调用原始 Bean 的方法。
-4.  执行原始 Bean 的方法。
-5.  拦截器处理结果。
-6.  代理返回最终结果。
+1. 调用代理的方法。
+2. 代理将调用转发给拦截器。
+3. 拦截器执行其额外逻辑，并决定何时调用原始 Bean 的方法。
+4. 执行原始 Bean 的方法。
+5. 拦截器处理结果。
+6. 代理返回最终结果。
 
-AOP 淡化了像方法和字段这样的具体概念，转而强调像“方法调用”这样的动态概念。在 AOP 术语中，目标对象上的方法调用或字段访问等事件点被定义为**连接点 (Join Points)**。我们感兴趣并筛选出来的特定连接点被定义为**切入点 (Pointcut)**。
+AOP 淡化了像方法和字段这样的具体概念，转而强调像「方法调用」这样的动态概念。在 AOP 术语中，目标对象上的方法调用或字段访问等事件点被定义为**连接点 (Join Points)**。我们感兴趣并筛选出来的特定连接点被定义为**切入点 (Pointcut)**。
 
 在切入点要做的事情称为**通知/增强 (Advice)**。
 
-**切面 (Aspect)** 是**切入点**和**通知**的结合。它通过定义“在哪里”（切入点）和“做什么”（通知），模块化了横切多个类型和对象的关注点。
+**切面 (Aspect)** 是**切入点**和**通知**的结合。它通过定义「在哪里」（切入点）和「做什么」（通知），模块化了横切多个类型和对象的关注点。
 
 ### 环绕 (Around)
 
@@ -149,7 +149,7 @@ AOP 淡化了像方法和字段这样的具体概念，转而强调像“方法�
 
 **事务 (Transaction)** 是数据库操作中的一个基本概念，它保证了 **ACID** 属性：
 
-- **原子性 (Atomicity)**：事务内的所有操作要么全部成功，要么全部失败并回滚。这是一个“全有或全无”的原则。
+- **原子性 (Atomicity)**：事务内的所有操作要么全部成功，要么全部失败并回滚。这是一个「全有或全无」的原则。
 - **一致性 (Consistency)**：事务完成后，数据库保持一致状态。它从一个有效状态转换到另一个有效状态。
 - **隔离性 (Isolation)**：并发事务互不影响，一个事务的中间状态对其他事务不可见。
 - **持久性 (Durability)**：一旦事务提交，其对数据库的更改就是永久的，即使系统发生故障也能保留。
@@ -188,7 +188,7 @@ try (Connection con = dataSource.getConnection();
 
 这说明了一个严格的依赖链：`DataSource` 创建 `Connection`，后者依次创建 `PreparedStatement`，其执行产生 `ResultSet`。所有这些（`Connection`, `PreparedStatement`, `ResultSet`）都是使用后必须关闭的资源。管理它们的推荐方法是使用 `try-with-resources` 语句。
 
-在我们的实现中，这种资源管理通过一个 `execute` 函数优雅地处理，该函数采用**借贷模式 (Loan Pattern)**（也称为**环绕执行方法模式**）。该模式的工作原理如下：方法获取资源（例如 `Connection`），将其“借”给代码块（通常是 Lambda 表达式）使用，最后确保资源被安全释放，无论代码是成功执行还是抛出异常。
+在我们的实现中，这种资源管理通过一个 `execute` 函数优雅地处理，该函数采用**借贷模式 (Loan Pattern)**（也称为**环绕执行方法模式**）。该模式的工作原理如下：方法获取资源（例如 `Connection`），将其「借」给代码块（通常是 Lambda 表达式）使用，最后确保资源被安全释放，无论代码是成功执行还是抛出异常。
 
 ### `@Transactional` 注解
 
@@ -213,11 +213,11 @@ try (Connection con = dataSource.getConnection();
 
 典型的 Java Web 应用程序遵循 Servlet 规范。Servlet 规范不仅定义了 WebApp 必须实现的接口，还定义了 Web 服务器（如 Tomcat）应如何加载 WebApp、请求的处理顺序以及各种组件的调用方式。这建立了一个清晰的解耦模型。Servlet 规范定义了三种核心组件类型：
 
-1.  **Listener (监听器)**：监听 WebApp 的生命周期事件，例如应用程序启动和关闭，以及 Session 创建和属性更改。
-2.  **Filter (过滤器)**：在 HTTP 请求到达最终 Servlet 之前执行。它用于授权、限流、日志记录和缓存验证等任务。
-3.  **Servlet**：最终处理 HTTP 请求，确定针对 GET、POST 或其他方法执行的业务逻辑，并生成响应。
+1. **Listener (监听器)**：监听 WebApp 的生命周期事件，例如应用程序启动和关闭，以及 Session 创建和属性更改。
+2. **Filter (过滤器)**：在 HTTP 请求到达最终 Servlet 之前执行。它用于授权、限流、日志记录和缓存验证等任务。
+3. **Servlet**：最终处理 HTTP 请求，确定针对 GET、POST 或其他方法执行的业务逻辑，并生成响应。
 
-单个 Tomcat 实例可以部署多个 WebApp。每个 WebApp 都有自己的 `ServletContext`，通常称为“Web 应用程序上下文”。属于同一 WebApp 的所有 Servlet、Filter、Listener 和资源文件都在其自己隔离的 `ServletContext` 中运行。
+单个 Tomcat 实例可以部署多个 WebApp。每个 WebApp 都有自己的 `ServletContext`，通常称为「Web 应用程序上下文」。属于同一 WebApp 的所有 Servlet、Filter、Listener 和资源文件都在其自己隔离的 `ServletContext` 中运行。
 
 我们的 mini-winter WebApp 也将完全运行在 Tomcat 为其创建的 `ServletContext` 中。
 
@@ -233,10 +233,10 @@ try (Connection con = dataSource.getConnection();
 
 对于 mini-winter 框架，两个最关键的任务是：
 
-1.  **创建 `ApplicationContext`**：这是 mini-winter 的 IoC 容器，负责组件扫描、Bean 实例化和依赖管理。
-2.  **注册 `DispatcherServlet` 并将其映射到根路径 `/`**：在其初始化期间，`DispatcherServlet` 获取对 `ApplicationContext`（在第一步中创建）的引用，这使其能够访问所有扫描到的控制器和服务组件。
+1. **创建 `ApplicationContext`**：这是 mini-winter 的 IoC 容器，负责组件扫描、Bean 实例化和依赖管理。
+2. **注册 `DispatcherServlet` 并将其映射到根路径 `/`**：在其初始化期间，`DispatcherServlet` 获取对 `ApplicationContext`（在第一步中创建）的引用，这使其能够访问所有扫描到的控制器和服务组件。
 
-因此，一旦 WebApp 成功启动，`DispatcherServlet` 就充当整个应用程序的“前端控制器 (Front Controller)”。当任何用户向此 WebApp 发送 HTTP 请求时，Tomcat 的 URL 匹配规则会将请求委托给 `DispatcherServlet` 进行处理。由于它映射到 `/`，几乎所有路径（除了少数例外）都将路由到它。
+因此，一旦 WebApp 成功启动，`DispatcherServlet` 就充当整个应用程序的「前端控制器 (Front Controller)」。当任何用户向此 WebApp 发送 HTTP 请求时，Tomcat 的 URL 匹配规则会将请求委托给 `DispatcherServlet` 进行处理。由于它映射到 `/`，几乎所有路径（除了少数例外）都将路由到它。
 
 `DispatcherServlet` 已经持有对 `ApplicationContext` 的完整引用。因此，在处理请求时，它可以直接访问 mini-winter 框架内的组件，如 Controller 和 Service，而不依赖于 Servlet API 的传统分发机制。请求路由和随后的业务逻辑完全由 mini-winter 框架的内部机制处理。
 
@@ -252,7 +252,7 @@ try (Connection con = dataSource.getConnection();
     }
 ```
 
-因此，`DispatcherServlet` 负责扫描所有标注了 `@Controller` 或 `@RestController` 的类，同时定义作为特定 URL 处理器的“分发器 (dispatchers)”。我们还定义了这些方法的参数，并将它们分为四种不同的类型，包括从 URL 中提取路径参数的 `PATH_VARIABLE`，从查询字符串或表单数据中提取参数的 `REQUEST_PARAM`，从 POST 请求的 JSON 负载中提取数据的 `REQUEST_BODY`，以及通过 `HttpServletRequest` API 检索标准对象的 `SERVLET_VARIABLE`。
+因此，`DispatcherServlet` 负责扫描所有标注了 `@Controller` 或 `@RestController` 的类，同时定义作为特定 URL 处理器的「分发器 (dispatchers)」。我们还定义了这些方法的参数，并将它们分为四种不同的类型，包括从 URL 中提取路径参数的 `PATH_VARIABLE`，从查询字符串或表单数据中提取参数的 `REQUEST_PARAM`，从 POST 请求的 JSON 负载中提取数据的 `REQUEST_BODY`，以及通过 `HttpServletRequest` API 检索标准对象的 `SERVLET_VARIABLE`。
 
 我们利用反射来检查方法并注册这些分发器实例，如下所示：
 
@@ -304,7 +304,7 @@ winter:
 
 ### Winter Boot
 
-在上一章中，我们成功实现了一个 Web 应用程序。然而，在传统的开发和部署场景中，工作流程涉及打包应用程序、复制文件以及手动启动外部 Tomcat 服务器，这可能相当复杂。为了简化此过程，我们可以将 Web 应用程序直接与 Winter 框架集成，以创建最终的“Winter Boot”。这消除了安装外部 Tomcat 或复制 WAR 文件的需要；应用程序可以直接从单个 JAR 文件运行。
+在上一章中，我们成功实现了一个 Web 应用程序。然而，在传统的开发和部署场景中，工作流程涉及打包应用程序、复制文件以及手动启动外部 Tomcat 服务器，这可能相当复杂。为了简化此过程，我们可以将 Web 应用程序直接与 Winter 框架集成，以创建最终的「Winter Boot」。这消除了安装外部 Tomcat 或复制 WAR 文件的需要；应用程序可以直接从单个 JAR 文件运行。
 
 ### 启动嵌入式 Tomcat (Start the embedded Tomcat)
 
@@ -323,21 +323,21 @@ winter:
 
 这个错误源于 JVM 的启动过程。在使用 `mvn clean package` 打包源代码并运行 WAR 文件后：
 
-1.  JVM 读取 `MANIFEST.MF` 文件，其中包含：
+1. JVM 读取 `MANIFEST.MF` 文件，其中包含：
     - `Main-Class: com.kaiyikang.hello.Main`
     - `Class-Path: tmp-webapp/WEB-INF/lib/...`
-2.  在这个精确时刻（启动时），`tmp-webapp` 目录**尚不存在**。
-3.  因此，JVM 会使这些路径失效（将它们从内部类路径列表中移除），并仅从 WAR 中加载 `Main.class`。
-4.  虽然 `Main.java` 执行并成功提取文件创建了 `tmp-webapp` 目录，但为时已晚。当代码尝试调用 `WinterApplication.run` 时，JVM 会失败，因为该类不在初始的类路径查找中，导致 `NoClassDefFoundError`。
+2. 在这个精确时刻（启动时），`tmp-webapp` 目录**尚不存在**。
+3. 因此，JVM 会使这些路径失效（将它们从内部类路径列表中移除），并仅从 WAR 中加载 `Main.class`。
+4. 虽然 `Main.java` 执行并成功提取文件创建了 `tmp-webapp` 目录，但为时已晚。当代码尝试调用 `WinterApplication.run` 时，JVM 会失败，因为该类不在初始的类路径查找中，导致 `NoClassDefFoundError`。
 
 为了解决这个问题，我们必须在 WAR 提取之后（即 `tmp-webapp` 创建之后）手动创建一个新的 ClassLoader，并使用它来加载 `WinterApplication`。
 
 我们通过使用 `new URLClassLoader` 实例化一个自定义的 `appClassLoader` 来实现这一点。但是，有几个关键的陷阱需要解决：
 
-1.  **Tomcat 配置：** 嵌入式 Tomcat 可能不会自动识别此自定义 ClassLoader，并可能默认使用系统加载器。因此，在 `WinterApplication` 内部，我们必须显式设置 Tomcat 的父类加载器：
+1. **Tomcat 配置：** 嵌入式 Tomcat 可能不会自动识别此自定义 ClassLoader，并可能默认使用系统加载器。因此，在 `WinterApplication` 内部，我们必须显式设置 Tomcat 的父类加载器：
     `ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());`
 
-2.  **“僵尸目录”问题：** 这是最关键的问题。“僵尸目录”指的是从以前的运行中残留的 `tmp-webapp` 文件夹。在启动期间，JVM 检测到此现有文件夹并自动将其添加到 `AppClassLoader` 的搜索路径中。如果我们的自定义 ClassLoader 默认使用 `AppClassLoader` 作为其父级，Java 的**父类委托模型 (Parent Delegation Model)** 规定父级会尝试首先加载类。`AppClassLoader` 将急切地从“僵尸”目录（旧版本）加载类，导致版本不匹配或依赖项丢失错误。
+2. **「僵尸目录」问题：** 这是最关键的问题。「僵尸目录」指的是从以前的运行中残留的 `tmp-webapp` 文件夹。在启动期间，JVM 检测到此现有文件夹并自动将其添加到 `AppClassLoader` 的搜索路径中。如果我们的自定义 ClassLoader 默认使用 `AppClassLoader` 作为其父级，Java 的**父类委托模型 (Parent Delegation Model)** 规定父级会尝试首先加载类。`AppClassLoader` 将急切地从「僵尸」目录（旧版本）加载类，导致版本不匹配或依赖项丢失错误。
 
 我们通过实现 ClassLoader 隔离来解决这个问题。在创建 `URLClassLoader` 时，我们显式将其父级设置为 **`PlatformClassLoader`**（它是 `AppClassLoader` 的父级，仅负责 JDK 扩展库）。
 
@@ -345,8 +345,8 @@ winter:
 
 ## 思考 (Thinking)
 
-1.  在编写类或方法之前先阅读它，思考它的功能以及它是如何编写的。
-2.  从单元测试开始会更容易理解。
+1. 在编写类或方法之前先阅读它，思考它的功能以及它是如何编写的。
+2. 从单元测试开始会更容易理解。
 
 ## 时间线 (Timeline)
 
