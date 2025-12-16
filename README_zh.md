@@ -8,9 +8,9 @@ Mini Winter 来自于 Summer Framework 即一个基于 Java Spring Framework 的
 
 - [summer-framework](https://liaoxuefeng.com/books/summerframework/introduction/index.html)
 
-## IOC - 控制反转 (Inversion Of Control)
+## 1. IOC - 控制反转 (Inversion Of Control)
 
-### 加载类和文件 (Load Classes and Files)
+### 1.1. 加载类和文件 (Load Classes and Files)
 
 在进入容器之前，我们需要先加载所有的类。ClassLoader 可以扫描所有以 `.class` 结尾的文件。
 这是核心的代码：
@@ -29,7 +29,7 @@ List<String> classList = resolver.scan(res -> {
 
 在单元测试中，编译后的测试类位于测试类路径（classpath）下（例如 Maven 的：`target/test-classes/com/kaiyikang/scan/*`），而资源文件则会被复制到具有相同包结构的同一类路径根目录下。
 
-### 属性解析器 (Property Resolver)
+### 1.2. 属性解析器 (Property Resolver)
 
 为了解析 `${app.title:default}` 类型的查询，我们可以采用递归的方法来处理高度复杂的情况，例如 `${app.path:${app.home:${ENV_NOT_EXIST:/not-exist}}}`。
 
@@ -37,7 +37,7 @@ List<String> classList = resolver.scan(res -> {
 
 具体的设计非常精妙。详情请参阅 `PropertyResolver.getProperty()`。
 
-### Bean 定义 (BeanDefinition)
+### 1.3. Bean 定义 (BeanDefinition)
 
 `BeanDefinition` 是一个核心类，旨在保存 Bean 的所有元数据，例如类名、作用域和生命周期回调。类似于一个模版，框架会根据该定义生成对应的实例。
 
@@ -52,7 +52,7 @@ Bean 主要通过两种方式定义：
 
 `AnnotationConfigApplicationContext` 的目的是扫描并收集所有带有有效注解的类，创建相应的 `BeanDefinition`，并将它们组织到一个以 Bean 名称为索引的内部注册表（Map）中。然后，它使用此注册表来定位并在请求时提供 Bean 实例。
 
-### Bean 实例 (BeanInstance)
+### 1.4. Bean 实例 (BeanInstance)
 
 **强依赖 (Strong dependencies)**，即通过构造函数或工厂方法注入的依赖，不能存在循环引用。如果发现此类依赖循环，容器必须抛出错误。相比之下，**弱依赖 (Weak dependencies)** 允许通过将实例化与属性注入分离来支持循环引用。
 
@@ -65,7 +65,7 @@ Bean 主要通过两种方式定义：
 
 关于弱依赖的实现细节，可以参考 `tryInjectProperties` 方法。它接收目标 `bean` 实例和一个 `acc` 对象（代表待注入的字段或方法）。该过程包括通过 `setAccessible(true)` 使成员可访问，解析需要注入的依赖 Bean，最后使用反射设置字段的值或使用解析出的依赖调用 Setter 方法。
 
-### Bean 后置处理器 (BeanPostProcessor)
+### 1.5. Bean 后置处理器 (BeanPostProcessor)
 
 当前的流程如下：
 
@@ -101,7 +101,7 @@ version = null
 
 完成接口部分。
 
-## AOP - 面向切面编程 (Aspect-Oriented Programming)
+## 2. AOP - 面向切面编程 (Aspect-Oriented Programming)
 
 **面向切面编程 (AOP)** 为已组装的 Bean 对象添加额外的通用功能。这些功能的特点是不属于核心业务逻辑，但它横切了不同业务领域的方法。AOP 为 Bean 添加了一个代理层。当调用 Bean 的方法时，首先调用代理的方法，代理再让 Bean 处理请求，最后可以添加一些收尾工作。
 
@@ -113,7 +113,7 @@ version = null
 
 mini-winter 仅支持基于注解的方式，即 Bean 清楚地知道它拥有什么「附加」」功能。它支持代理所有类型的类，并使用 Byte Buddy 作为其实现机制。
 
-### 代理解析器 (ProxyResolver)
+### 2.1. 代理解析器 (ProxyResolver)
 
 两件事至关重要：
 
@@ -135,7 +135,7 @@ AOP 淡化了像方法和字段这样的具体概念，转而强调像「方法�
 
 **切面 (Aspect)** 是**切入点**和**通知**的结合。它通过定义「在哪里」（切入点）和「做什么」（通知），模块化了横切多个类型和对象的关注点。
 
-### 环绕 (Around)
+### 2.2. 环绕 (Around)
 
 `@Polite` 注解应用于方法，表示它们需要特殊处理。对于需要应用 AOP 的类，使用 `@Around("aroundInvocationHandler")`，其中的值指定框架应使用哪个处理器来处理该切面。
 
@@ -145,7 +145,7 @@ AOP 淡化了像方法和字段这样的具体概念，转而强调像「方法�
 
 最后，要使用自定义注解（例如 `@Transactional`）实现 AOP，可以使用泛型基类 `AnnotationProxyBeanPostProcessor<A extends Annotation>`。只需创建一个继承自 `AnnotationProxyBeanPostProcessor<Transactional>` 的类即可实现。
 
-## JDBC - Java 数据库连接与事务
+## 3. JDBC - Java 数据库连接与事务
 
 **事务 (Transaction)** 是数据库操作中的一个基本概念，它保证了 **ACID** 属性：
 
@@ -156,7 +156,7 @@ AOP 淡化了像方法和字段这样的具体概念，转而强调像「方法�
 
 本章将涵盖**声明式事务**的实现，主要是通过 `@Transactional` 注解。当执行标记有此注解的方法时，底层框架会自动管理事务生命周期（开始、提交、回滚）以强制执行这些 ACID 属性。
 
-### JdbcTemplate
+### 3.1. JdbcTemplate
 
 **JDBC** 代表 **Java Database Connectivity**，它是 Java 应用程序连接数据库的标准 API。在本章中，我们将实现一个 `JdbcTemplate`。该模板封装了原始 JDBC 的冗长和样板代码，允许开发人员专注于编写 SQL 和提供参数。
 
@@ -190,7 +190,7 @@ try (Connection con = dataSource.getConnection();
 
 在我们的实现中，这种资源管理通过一个 `execute` 函数优雅地处理，该函数采用**借贷模式 (Loan Pattern)**（也称为**环绕执行方法模式**）。该模式的工作原理如下：方法获取资源（例如 `Connection`），将其「借」给代码块（通常是 Lambda 表达式）使用，最后确保资源被安全释放，无论代码是成功执行还是抛出异常。
 
-### `@Transactional` 注解
+### 3.2. `@Transactional` 注解
 
 `@Transactional` 注解通过利用事务生命周期，有效地确保了操作的**原子性**。
 
@@ -205,9 +205,9 @@ try (Connection con = dataSource.getConnection();
 
 因此，像 `TransactionalUtils.getCurrentConnection()` 这样的实用方法可以检索当前绑定到当前线程活动事务的数据库连接。
 
-## MVC 的实现 (Implementation of MVC)
+## 4. MVC 的实现 (Implementation of MVC)
 
-### Boot WebApp
+### 4.1. Boot WebApp
 
 在本节中，我们的目标是使用当前的 mini-winter 框架创建一个 WebApp，并将其打包为 WAR (Web Application Archive) 文件。当 Tomcat 服务器启动时，它将扫描并加载此 WAR 文件，确保在浏览器中访问相应的 URL 时，能正确显示 WebApp 的响应。
 
@@ -240,7 +240,7 @@ try (Connection con = dataSource.getConnection();
 
 `DispatcherServlet` 已经持有对 `ApplicationContext` 的完整引用。因此，在处理请求时，它可以直接访问 mini-winter 框架内的组件，如 Controller 和 Service，而不依赖于 Servlet API 的传统分发机制。请求路由和随后的业务逻辑完全由 mini-winter 框架的内部机制处理。
 
-### MVC 的实现 (Implement of MVC)
+### 4.2. MVC 的实现 (Implement of MVC)
 
 在本节中，我们将完善 `DispatcherServlet`，首先定义诸如 `@Controller` 和 `@RestController` 之类的注解来标记类，然后创建像 `@GetMapping` 这样的注解来装饰方法。这些方法绑定到特定的端点路径，如以下示例所示：
 
@@ -279,7 +279,7 @@ protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws Se
 
 最后，在 `handleRestResult` 和 `handleMvcResult` 中，我们根据具体的类型处理分发器的返回值。`void` 返回类型表示请求已在内部处理，而 `String` 可能代表视图名称或触发重定向（如果它以 "redirect:" 开头）。此外，带有 `@ResponseBody` 的 `String` 或 `byte[]` 意味着内容直接写入响应，而 `ModelAndView` 对象表示包含模型和视图数据的 MVC 响应，需要由 `FreeMarkerViewResolver` 进行渲染。
 
-### 创建 WebApp (Create WebApp)
+### 4.3. 创建 WebApp (Create WebApp)
 
 首先，在 src/main/resources 目录中创建 application.yml 文件：
 
@@ -302,11 +302,11 @@ winter:
 
 最后，要部署应用程序，我们只需要将生成的 WAR 文件放入 Tomcat 的 webapps 目录中。服务器运行后，可以通过在浏览器中导航到 `localhost:8080` 来查看 Web 应用程序。
 
-### Winter Boot
+### 4.4. Winter Boot
 
 在上一章中，我们成功实现了一个 Web 应用程序。然而，在传统的开发和部署场景中，工作流程涉及打包应用程序、复制文件以及手动启动外部 Tomcat 服务器，这可能相当复杂。为了简化此过程，我们可以将 Web 应用程序直接与 Winter 框架集成，以创建最终的「Winter Boot」。这消除了安装外部 Tomcat 或复制 WAR 文件的需要；应用程序可以直接从单个 JAR 文件运行。
 
-### 启动嵌入式 Tomcat (Start the embedded Tomcat)
+### 4.5. 启动嵌入式 Tomcat (Start the embedded Tomcat)
 
 当程序执行 `WinterApplication.run()` 时，它会启动**嵌入式 Tomcat**。
 
@@ -314,7 +314,7 @@ winter:
 
 随后，我们注册一个 `ServletContainerInitializer`。Tomcat 在其启动阶段会触发此初始化器。这个钩子负责关键的引导过程：创建 `AnnotationConfigApplicationContext`（初始化 IoC 容器）并调用 `WebUtils.registerDispatcherServlet` 来注册 DispatcherServlet。
 
-### 实现 Boot 应用 (Implementing the Boot App)
+### 4.6. 实现 Boot 应用 (Implementing the Boot App)
 
 在代码中，我们使用 `jarFile` 路径来判断应用程序是在 IDE 中运行还是作为打包的构件通过 `java -jar` 运行。因此，`webDir`（静态资源路径）和 `baseDir`（编译后的 Java 文件路径）会相应地进行调整。
 
@@ -343,12 +343,12 @@ winter:
 
 这有效地切断了对 `AppClassLoader` 的委托，绕过了僵尸目录的干扰，并强制我们的自定义加载器加载新提取的 Jar 包。
 
-## 一些思考
+## 5. 一些思考
 
 1. 在编写类或方法之前先阅读它，思考它的功能以及它是如何编写的。
 2. 从单元测试开始会更容易理解。
 
-## 时间线
+## 6. 时间线
 
 2025.09.05 资源解析器 (ResourceResolver) 完成
 2025.09.09 属性解析器 (PropertyResolver) 完成
