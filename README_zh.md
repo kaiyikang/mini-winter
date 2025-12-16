@@ -2,7 +2,7 @@
 
 Mini Winter 来自于 Summer Framework 即一个基于 Java Spring Framework 的简化版本。
 
-## 来源 (Source)
+## 来源
 
 参考资料：
 
@@ -343,12 +343,12 @@ winter:
 
 这有效地切断了对 `AppClassLoader` 的委托，绕过了僵尸目录的干扰，并强制我们的自定义加载器加载新提取的 Jar 包。
 
-## 思考 (Thinking)
+## 一些思考
 
 1. 在编写类或方法之前先阅读它，思考它的功能以及它是如何编写的。
 2. 从单元测试开始会更容易理解。
 
-## 时间线 (Timeline)
+## 时间线
 
 2025.09.05 资源解析器 (ResourceResolver) 完成
 2025.09.09 属性解析器 (PropertyResolver) 完成
