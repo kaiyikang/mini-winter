@@ -8,15 +8,15 @@ For reference:
 
 - [summer-framework](https://liaoxuefeng.com/books/summerframework/introduction/index.html)
 
-## IOC - Inversion Of Control
+## 1. IOC - Inversion Of Control
 
-### Load Classes and Files
+### 1.1 Load Classes and Files
 
 We need to load all the classes first before we can go into the container.
 
 In unit tests, compiled test classes end up under the test classpath (e.g., Maven: target/test-classes/com/kaiyikang/scan/\*), and resources are copied to the same classpath root with the same package layout (e.g., target/test-classes/com/kaiyikang/scan/sub1.txt).
 
-### Property Resolver
+### 1.2 Property Resolver
 
 To parse queries of the type `${app.title:default}`, a recursive approach can be adopted to handle highly complex situations, such as `${app.path:${app.home:${ENV_NOT_EXIST:/not-exist}}}`.
 
@@ -24,7 +24,7 @@ First, the core `public String getProperty(String key)` method is called. If the
 
 The specific design is quite ingenious. For details, please refer to `PropertyResolver.getProperty()`.
 
-### BeanDefinition
+### 1.3 BeanDefinition
 
 A `BeanDefinition` is a core class designed to hold all metadata for a Bean, such as its class name, scope, and lifecycle callbacks.
 
@@ -39,7 +39,7 @@ During the development of the Bean loading and initialization logic, a strong em
 
 The purpose of the `AnnotationConfigApplicationContext` is to scan for and collect all classes with valid annotations, create corresponding `BeanDefinition`s, and organize them into an internal registry (a Map) indexed by bean name. It then uses this registry to locate and serve Bean instances upon request.
 
-### BeanInstance
+### 1.4 BeanInstance
 
 **Strong dependencies**, those supplied through constructor or factory method injection, cannot have circular references. The container must throw an error if such a dependency loop is found. In contrast, **weak dependencies** allow for circular references by separating instantiation from property injection.
 
@@ -52,7 +52,7 @@ Regarding API naming conventions: `get` methods are expected to always return an
 
 For an implementation detail on weak dependencies, consider the `tryInjectProperties` method. It takes the target `bean` instance and an `acc` object (representing the field or method to be injected). The process involves making the member accessible via `setAccessible(true)`, resolving the dependency bean that needs to be injected, and finally, using reflection to set the field's value or invoke the setter method with the resolved dependency.
 
-### BeanPostProcessor
+### 1.5 BeanPostProcessor
 
 The current process is as follows:
 
@@ -84,11 +84,11 @@ target = FirstProxyBean@96
 version = null
 ```
 
-### Finish IOC
+### 1.6 Finish IOC
 
 Finish interface.
 
-## AOP - Aspect-Oriented Programming
+## 2. AOP - Aspect-Oriented Programming
 
 **Aspect-Oriented Programming (AOP)** adds extra, common functionality to already assembled Bean objects. This functionality is characterized by not being part of the core business logic, yet it cuts across methods in different business areas. AOP adds a proxy layer to a Bean. When a bean's method is called, the proxy's method is invoked first, which then lets the bean handle the request, and finally, some finishing work can be added.
 
@@ -100,7 +100,7 @@ There are three ways to implement this:
 
 mini-winter only supports the annotation-based approach, where a Bean clearly knows what "add-on" it has. It supports proxying all types of classes and uses Byte Buddy as its implementation mechanism.
 
-### ProxyResolver
+### 2.1 ProxyResolver
 
 Two things are essential:
 
@@ -122,7 +122,7 @@ What to do at a Pointcut is called an **Advice**.
 
 An **Aspect** is the combination of a **Pointcut** and an **Advice**. It modularizes a concern that cuts across multiple types and objects by defining "where" (the Pointcut) and "what" (the Advice) to do.
 
-### Around
+### 2.2 Around
 
 The `@Polite` annotation is applied to methods to indicate that they require special processing. For classes that need AOP applied, use `@Around("aroundInvocationHandler")`, where the value specifies which handler the framework should use to process the aspect.
 
@@ -132,7 +132,7 @@ Additionally, to implement **before** or **after** patterns, the adapter pattern
 
 Finally, to implement AOP using custom annotations (e.g., `@Transactional`), you can use the generic base class `AnnotationProxyBeanPostProcessor<A extends Annotation>`. Simply create a class that extends `AnnotationProxyBeanPostProcessor<Transactional>` to achieve this.
 
-## JDBC - Java DataBase Connectivity & Transactions
+## 3. JDBC - Java DataBase Connectivity & Transactions
 
 A **transaction** is a fundamental concept in database operations that guarantees **ACID** properties:
 
@@ -143,7 +143,7 @@ A **transaction** is a fundamental concept in database operations that guarantee
 
 This chapter will cover the implementation of **declarative transactions**, notably through the `@Transactional` annotation. When a method marked with this annotation is executed, the underlying framework automatically manages the transaction lifecycle (begin, commit, rollback) to enforce these ACID properties.
 
-### JdbcTemplate
+### 3.1 JdbcTemplate
 
 **JDBC** stands for **Java Database Connectivity**, which is the standard API for connecting Java applications to databases. In this chapter, we will implement a `JdbcTemplate`. This template encapsulates the verbose and boilerplate code of raw JDBC, allowing developers to focus on writing SQL and providing parameters.
 
@@ -177,7 +177,7 @@ This illustrates a strict dependency chain: a `DataSource` creates a `Connection
 
 In our implementation, this resource management is handled elegantly by an `execute` function that employs the **Loan Pattern** (also known as the **Execute Around Method Pattern**). This pattern works as follows: a method acquires a resource (e.g., a `Connection`), "loans" it to a block of code (typically a lambda expression) for use, and finally ensures the resource is safely released, regardless of whether the code executes successfully or throws an exception.
 
-### The `@Transactional` Annotation
+### 3.2 The `@Transactional` Annotation
 
 The `@Transactional` annotation, by leveraging a transaction lifecycle, effectively ensures the **atomicity** of operations.
 
@@ -192,9 +192,9 @@ This scenario of joining an existing transaction is particularly relevant in **n
 
 Consequently, utility methods like `TransactionalUtils.getCurrentConnection()` can retrieve the database connection that is currently bound to the active transaction on the current thread.
 
-## Implementation of MVC
+## 4. Implementation of MVC
 
-### Boot WebApp
+### 4.1 Boot WebApp
 
 In this section, our goal is to create a WebApp using the current mini-winter framework and package it as a WAR (Web Application Archive) file. When the Tomcat server starts, it will scan for and load this WAR file, ensuring that when the corresponding URL is accessed in a browser, the WebApp's response is correctly displayed.
 
@@ -227,7 +227,7 @@ Thus, once the WebApp has started successfully, the `DispatcherServlet` acts as 
 
 The `DispatcherServlet` already holds a complete reference to the `ApplicationContext`. Therefore, when processing a request, it can directly access components within the mini-winter framework, such as Controllers and Services, without relying on the traditional dispatching mechanisms of the Servlet API. The request routing and subsequent business logic are handled entirely by the internal mechanisms of the mini-winter framework.
 
-### Implement of MVC
+### 4.2 Implement of MVC
 
 In this section, we will refine the `DispatcherServlet` by first defining annotations such as `@Controller` and `@RestController` to mark classes and then creating annotations like `@GetMapping` to decorate methods. These methods bind to specific endpoint paths, as shown in the following example:
 
@@ -266,7 +266,7 @@ protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws Se
 
 Finally, within `handleRestResult` and `handleMvcResult`, we process the return values from the dispatchers based on their specific types. A `void` return type indicates that the request has been handled internally, whereas a `String` might represent a view name or trigger a redirection if it starts with "redirect:". Additionally, a `String` or `byte[]` accompanied by `@ResponseBody` implies the content is written directly to the response, while a `ModelAndView` object signifies an MVC response containing both model and view data that requires rendering by the `FreeMarkerViewResolver`.
 
-### Create WebApp
+### 4.3 Create WebApp
 
 First, create the application.yml file within the src/main/resources directory:
 
@@ -289,11 +289,11 @@ Furthermore, you still need to create static files, and crucially, provide the c
 
 Finally, to deploy the application, you only need to place the generated WAR file into your Tomcat's webapps directory. Once the server is running, you can view the web application by navigating to `localhost:8080` in your browser.
 
-### Winter Boot
+### 4.4 Winter Boot
 
 In the previous chapter, we successfully implemented a web application. However, in a traditional development and deployment scenario, the workflow involves packaging the application, copying files, and manually starting an external Tomcat server, which can be quite complex. To simplify this process, we can integrate the web application directly with the Winter framework to create the final "Winter Boot". This eliminates the need to install an external Tomcat or copy WAR files; the application can be run directly from a single JAR file.
 
-### Start the embedded Tomcat
+### 4.5 Start the embedded Tomcat
 
 When the program executes `WinterApplication.run()`, it initiates the **embedded Tomcat**.
 
@@ -301,7 +301,7 @@ Since we are bypassing the traditional `web.xml` configuration, we must use `add
 
 Subsequently, we register a `ServletContainerInitializer`. Tomcat triggers this initializer during its startup phase. This hook is responsible for the critical bootstrap process: creating the `AnnotationConfigApplicationContext` (initializing the IoC container) and invoking `WebUtils.registerDispatcherServlet` to register the DispatcherServlet.
 
-### Implementing the Boot App
+### 4.6 Implementing the Boot App
 
 In our code, we use the `jarFile` path to determine whether the application is running within an IDE or as a packaged artifact via `java -jar`. Consequently, the `webDir` (the path for static resources) and `baseDir` (the path for compiled Java files) are adjusted accordingly.
 
@@ -330,25 +330,25 @@ We resolve this by implementing ClassLoader isolation. When creating the `URLCla
 
 This effectively cuts off the delegation to `AppClassLoader`, bypasses interference from the zombie directory, and forces our custom loader to load the freshly extracted Jar packages.
 
-## Thinking
+## 7. Thinking
 
 1. Read the class or method before writing it, thinking about its functionalities and how it is written.
 2. Starting with unittest makes it easier to understand.
 
-## Timeline
+## 8. Timeline
 
-2025.09.05 ResourceResolver Done
-2025.09.09 PropertyResolver Done
-2025.09.17 BeanDefinition Done
-2025.09.19 Create BeanInstance Done
-2025.09.24 BeanPostProcessor Done
-2025.09.24 IOC Done
-2025.09.26 ProxyResolver Done
-2025.10.17 Around Done
-2025.11.03 JdbcTemplate Done
-2025.11.04 Transactional Done
-2025.11.23 Boot WebApp Done
-2025.12.10 Implement of MVC Done
-2025.12.10 Create WebApp Done
-2025.12.10 Start the embedded Tomcat Done
-2025.12.13 Implementing the Boot App Done
+- 2025.09.05 ResourceResolver Done
+- 2025.09.09 PropertyResolver Done
+- 2025.09.17 BeanDefinition Done
+- 2025.09.19 Create BeanInstance Done
+- 2025.09.24 BeanPostProcessor Done
+- 2025.09.24 IOC Done
+- 2025.09.26 ProxyResolver Done
+- 2025.10.17 Around Done
+- 2025.11.03 JdbcTemplate Done
+- 2025.11.04 Transactional Done
+- 2025.11.23 Boot WebApp Done
+- 2025.12.10 Implement of MVC Done
+- 2025.12.10 Create WebApp Done
+- 2025.12.10 Start the embedded Tomcat Done
+- 2025.12.13 Implementing the Boot App Done
