@@ -1,12 +1,11 @@
 # mini-winter
 
-The simplified version of Java Spring Framework
+Mini Winter comes from Summer Framework, which is a simplified version based on Java Spring Framework.
 
 ## Source
 
 For reference:
 
-- [mini-spring](https://github.com/DerekYRC/mini-spring)
 - [summer-framework](https://liaoxuefeng.com/books/summerframework/introduction/index.html)
 
 ## IOC - Inversion Of Control
@@ -64,15 +63,10 @@ The current process is as follows:
 
 A new requirement has emerged: if we need to replace a bean or add new logic to an already instantiated bean, we must use a `BeanPostProcessor`. This happens around steps 2 and 3.
 
-After step 2, a `BeanProxy` can be created and returned to the factory, replacing the original bean. For step 3, there are two important points to note:
+After step 2, a `BeanProxy` can be created and returned to the factory, replacing the original bean. For step 3, assume BeanA depends on BeanB (i.e., BeanA is the main container, and BeanB is the dependency), or in other words, BeanB is injected into BeanA. In this case:
 
-1. For example, if a `Controller` needs a bean to be injected, the `BeanProxy` should be injected, not the original bean.
-2. If this bean itself needs other dependencies, should they be injected into the original bean or the `BeanProxy`? The answer is the **original bean**, because the original bean is the one that actually performs the operations.
-
-In summary:
-
-- To any bean that depends on me, expose the proxy object.
-- For any dependency I have, inject it into the original object.
+1. The BeanA receiving the injection needs to be the original one, because it is the one doing the actual work.
+2. The BeanB being injected must be the proxy, because when BeanA calls BeanB, the logic belonging to B should be triggered correctly.
 
 To solve the second problem, we can extend `BeanPostProcessor` with a new method. This method ensures that when injecting properties into a bean, the **original bean** is returned for the injection process. Furthermore, when using these properties, we should **always use getters** instead of accessing fields directly, because the injection occurs on the original bean.
 
@@ -206,9 +200,9 @@ In this section, our goal is to create a WebApp using the current mini-winter fr
 
 A typical Java web application adheres to the Servlet Specification. The Servlet Specification defines not only the interfaces that a WebApp must implement but also how a web server (like Tomcat) should load the WebApp, the order in which requests are processed, and how various components are invoked. This establishes a clear decoupling model. The Servlet Specification defines three core component types:
 
-1.  **Listener**: Listens for lifecycle events of the WebApp, such as application startup and shutdown, as well as Session creation and attribute changes.
-2.  **Filter**: Executes before an HTTP request reaches the final Servlet. It is used for tasks like authorization, rate limiting, logging, and cache validation.
-3.  **Servlet**: Ultimately handles the HTTP request, determining the business logic to execute for GET, POST, or other methods, and generating the response.
+1. **Listener**: Listens for lifecycle events of the WebApp, such as application startup and shutdown, as well as Session creation and attribute changes.
+2. **Filter**: Executes before an HTTP request reaches the final Servlet. It is used for tasks like authorization, rate limiting, logging, and cache validation.
+3. **Servlet**: Handles the HTTP request, determining the business logic to execute for GET, POST, or other methods, and generating the response.
 
 A single Tomcat instance can deploy multiple WebApps. Each WebApp has its own `ServletContext`, often referred to as the "web application context." All Servlets, Filters, Listeners, and resource files belonging to the same WebApp operate within their own isolated `ServletContext`.
 
@@ -226,8 +220,8 @@ Based on this configuration, Tomcat loads the `ContextLoaderListener` and invoke
 
 For the mini-winter framework, the two most critical tasks are:
 
-1.  **Create the `ApplicationContext`**: This is the IoC (Inversion of Control) container for mini-winter, responsible for component scanning, bean instantiation, and dependency management.
-2.  **Register the `DispatcherServlet` and map it to the root path `/`**: During its initialization, the `DispatcherServlet` obtains a reference to the `ApplicationContext` (created in the first step), which allows it to access all scanned controllers and service components.
+1. **Create the `ApplicationContext`**: This is the IoC (Inversion of Control) container for mini-winter, responsible for component scanning, bean instantiation, and dependency management.
+2. **Register the `DispatcherServlet` and map it to the root path `/`**: During its initialization, the `DispatcherServlet` obtains a reference to the `ApplicationContext` (created in the first step), which allows it to access all scanned controllers and service components.
 
 Thus, once the WebApp has started successfully, the `DispatcherServlet` acts as the "Front Controller" for the entire application. When any user sends an HTTP request to this WebApp, Tomcat's URL matching rules will delegate the request to the `DispatcherServlet` for processing. Since it is mapped to `/`, virtually all paths (with a few exceptions) will be routed to it.
 
@@ -276,7 +270,7 @@ Finally, within `handleRestResult` and `handleMvcResult`, we process the return 
 
 First, create the application.yml file within the src/main/resources directory:
 
-```YAML
+```yaml
 app:
     title: Hello Application
     version: 1.0
@@ -316,21 +310,21 @@ If we strictly follow the original tutorial, the code runs correctly within an I
 
 The error stems from the JVM startup process. After packaging the source code with `mvn clean package` and running the WAR file:
 
-1.  The JVM reads the `MANIFEST.MF` file, which contains:
-    - `Main-Class: com.kaiyikang.hello.Main`
-    - `Class-Path: tmp-webapp/WEB-INF/lib/...`
-2.  At this precise moment (startup), the `tmp-webapp` directory **does not exist yet**.
-3.  Consequently, the JVM invalidates these paths (removes them from its internal classpath list) and proceeds to load only `Main.class` from the WAR.
-4.  Although `Main.java` executes and successfully extracts the files to create the `tmp-webapp` directory, the damage is done. When the code attempts to call `WinterApplication.run`, the JVM fails because the class was not in the initial classpath lookup, resulting in a `NoClassDefFoundError`.
+1. The JVM reads the `MANIFEST.MF` file, which contains:
+      - `Main-Class: com.kaiyikang.hello.Main`
+      - `Class-Path: tmp-webapp/WEB-INF/lib/...`
+2. At this precise moment (startup), the `tmp-webapp` directory **does not exist yet**.
+3. Consequently, the JVM invalidates these paths (removes them from its internal classpath list) and proceeds to load only `Main.class` from the WAR.
+4. Although `Main.java` executes and successfully extracts the files to create the `tmp-webapp` directory, the damage is done. When the code attempts to call `WinterApplication.run`, the JVM fails because the class was not in the initial classpath lookup, resulting in a `NoClassDefFoundError`.
 
-To resolve this, we must manually create a new ClassLoader _after_ the WAR extraction (i.e., after `tmp-webapp` is created) and use it to load `WinterApplication`.
+To resolve this, we must manually create a new ClassLoader *after* the WAR extraction (i.e., after `tmp-webapp` is created) and use it to load `WinterApplication`.
 
 We achieve this by instantiating a custom `appClassLoader` using `new URLClassLoader`. However, there are several critical pitfalls to address:
 
-1.  **Tomcat Configuration:** Embedded Tomcat may not automatically recognize this custom ClassLoader and might default to the system loader. Therefore, inside `WinterApplication`, we must explicitly set the parent class loader for Tomcat:
+1. **Tomcat Configuration:** Embedded Tomcat may not automatically recognize this custom ClassLoader and might default to the system loader. Therefore, inside `WinterApplication`, we must explicitly set the parent class loader for Tomcat:
     `ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());`
 
-2.  **The "Zombie Directory" Issue:** This is the most critical problem. A "Zombie Directory" refers to a residual `tmp-webapp` folder remaining from a previous run. During startup, the JVM detects this existing folder and automatically adds it to the `AppClassLoader`'s search path. If our custom ClassLoader defaults to using `AppClassLoader` as its parent, Java's **Parent Delegation Model** dictates that the parent attempts to load the class first. The `AppClassLoader` will eagerly load the classes from the "zombie" directory (the old version), leading to version mismatches or missing dependency errors.
+2. **The "Zombie Directory" Issue:** This is the most critical problem. A "Zombie Directory" refers to a residual `tmp-webapp` folder remaining from a previous run. During startup, the JVM detects this existing folder and automatically adds it to the `AppClassLoader`'s search path. If our custom ClassLoader defaults to using `AppClassLoader` as its parent, Java's **Parent Delegation Model** dictates that the parent attempts to load the class first. The `AppClassLoader` will eagerly load the classes from the "zombie" directory (the old version), leading to version mismatches or missing dependency errors.
 
 We resolve this by implementing ClassLoader isolation. When creating the `URLClassLoader`, we explicitly set its parent to **`PlatformClassLoader`** (which is the parent of `AppClassLoader` and is only responsible for JDK extension libraries).
 
