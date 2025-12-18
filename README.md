@@ -1,4 +1,4 @@
-# mini-winter
+# MINI-WINTER
 
 Mini Winter comes from Summer Framework, which is a simplified version based on Java Spring Framework.
 
