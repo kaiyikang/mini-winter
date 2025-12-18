@@ -2,6 +2,10 @@
 
 Mini Winter 来自于 Summer Framework 即一个基于 Java Spring Framework 的简化版本。
 
+## 为什么写这个项目？
+
+精通一个框架的最佳方式是拆解它的“魔法”。我开发 Mini-Winter 是为了深度还原 Spring 的核心机制：从属性的递归解析、Bean 的两阶段生命周期，到 AOP 代理的底层实现，以及嵌入式 Tomcat 中复杂的类加载器隔离问题。这不仅是一次代码复刻，更是一场解决真实工程挑战的修行——例如处理循环依赖、确保事务原子性，以及在“造轮子”的过程中磨炼架构思维。
+
 ## 来源
 
 参考资料：
@@ -324,8 +328,8 @@ winter:
 这个错误源于 JVM 的启动过程。在使用 `mvn clean package` 打包源代码并运行 WAR 文件后：
 
 1. JVM 读取 `MANIFEST.MF` 文件，其中包含：
-    - `Main-Class: com.kaiyikang.hello.Main`
-    - `Class-Path: tmp-webapp/WEB-INF/lib/...`
+   - `Main-Class: com.kaiyikang.hello.Main`
+   - `Class-Path: tmp-webapp/WEB-INF/lib/...`
 2. 在这个精确时刻（启动时），`tmp-webapp` 目录**尚不存在**。
 3. 因此，JVM 会使这些路径失效（将它们从内部类路径列表中移除），并仅从 WAR 中加载 `Main.class`。
 4. 虽然 `Main.java` 执行并成功提取文件创建了 `tmp-webapp` 目录，但为时已晚。当代码尝试调用 `WinterApplication.run` 时，JVM 会失败，因为该类不在初始的类路径查找中，导致 `NoClassDefFoundError`。
@@ -335,7 +339,7 @@ winter:
 我们通过使用 `new URLClassLoader` 实例化一个自定义的 `appClassLoader` 来实现这一点。但是，有几个关键的陷阱需要解决：
 
 1. **Tomcat 配置：** 嵌入式 Tomcat 可能不会自动识别此自定义 ClassLoader，并可能默认使用系统加载器。因此，在 `WinterApplication` 内部，我们必须显式设置 Tomcat 的父类加载器：
-    `ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());`
+   `ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());`
 
 2. **「僵尸目录」问题：** 这是最关键的问题。「僵尸目录」指的是从以前的运行中残留的 `tmp-webapp` 文件夹。在启动期间，JVM 检测到此现有文件夹并自动将其添加到 `AppClassLoader` 的搜索路径中。如果我们的自定义 ClassLoader 默认使用 `AppClassLoader` 作为其父级，Java 的**父类委托模型 (Parent Delegation Model)** 规定父级会尝试首先加载类。`AppClassLoader` 将急切地从「僵尸」目录（旧版本）加载类，导致版本不匹配或依赖项丢失错误。
 
