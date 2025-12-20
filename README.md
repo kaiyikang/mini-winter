@@ -1,5 +1,9 @@
 # MINI-WINTER
 
+<p align="center">
+  <img src="./resources/mini-winter-cover.jpg" width="500" title="Mini Winter Framework">
+</p>
+
 Mini Winter comes from Summer Framework, which is a simplified version based on Java Spring Framework.
 
 ## Source
@@ -272,15 +276,15 @@ First, create the application.yml file within the src/main/resources directory:
 
 ```yaml
 app:
-    title: Hello Application
-    version: 1.0
+  title: Hello Application
+  version: 1.0
 
 winter:
-    datasource:
-        url: jdbc:sqlite:test.db
-        driver-class-name: org.sqlite.JDBC
-        username: sa
-        password:
+  datasource:
+    url: jdbc:sqlite:test.db
+    driver-class-name: org.sqlite.JDBC
+    username: sa
+    password:
 ```
 
 Next, you will create the core components , which include the HelloConfiguration class and related Service and Controller classes, these will be registered as Beans within the Mini Winter framework. The Service layer will be responsible for operations related to the User database. While the Web layer will house the Controller and Filter components.
@@ -311,18 +315,18 @@ If we strictly follow the original tutorial, the code runs correctly within an I
 The error stems from the JVM startup process. After packaging the source code with `mvn clean package` and running the WAR file:
 
 1. The JVM reads the `MANIFEST.MF` file, which contains:
-      - `Main-Class: com.kaiyikang.hello.Main`
-      - `Class-Path: tmp-webapp/WEB-INF/lib/...`
+   - `Main-Class: com.kaiyikang.hello.Main`
+   - `Class-Path: tmp-webapp/WEB-INF/lib/...`
 2. At this precise moment (startup), the `tmp-webapp` directory **does not exist yet**.
 3. Consequently, the JVM invalidates these paths (removes them from its internal classpath list) and proceeds to load only `Main.class` from the WAR.
 4. Although `Main.java` executes and successfully extracts the files to create the `tmp-webapp` directory, the damage is done. When the code attempts to call `WinterApplication.run`, the JVM fails because the class was not in the initial classpath lookup, resulting in a `NoClassDefFoundError`.
 
-To resolve this, we must manually create a new ClassLoader *after* the WAR extraction (i.e., after `tmp-webapp` is created) and use it to load `WinterApplication`.
+To resolve this, we must manually create a new ClassLoader _after_ the WAR extraction (i.e., after `tmp-webapp` is created) and use it to load `WinterApplication`.
 
 We achieve this by instantiating a custom `appClassLoader` using `new URLClassLoader`. However, there are several critical pitfalls to address:
 
 1. **Tomcat Configuration:** Embedded Tomcat may not automatically recognize this custom ClassLoader and might default to the system loader. Therefore, inside `WinterApplication`, we must explicitly set the parent class loader for Tomcat:
-    `ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());`
+   `ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());`
 
 2. **The "Zombie Directory" Issue:** This is the most critical problem. A "Zombie Directory" refers to a residual `tmp-webapp` folder remaining from a previous run. During startup, the JVM detects this existing folder and automatically adds it to the `AppClassLoader`'s search path. If our custom ClassLoader defaults to using `AppClassLoader` as its parent, Java's **Parent Delegation Model** dictates that the parent attempts to load the class first. The `AppClassLoader` will eagerly load the classes from the "zombie" directory (the old version), leading to version mismatches or missing dependency errors.
 
