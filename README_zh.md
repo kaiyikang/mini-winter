@@ -1,5 +1,9 @@
 # mini-winter
 
+<p align="center">
+  <img src="./resources/mini-winter-cover.jpg" width="500" title="Mini Winter Framework">
+</p>
+
 Mini Winter 来自于 Summer Framework 即一个基于 Java Spring Framework 的简化版本。
 
 ## 为什么写这个项目？
