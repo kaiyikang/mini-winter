@@ -2,10 +2,6 @@ package com.kaiyikang.winter.utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import com.kaiyikang.winter.annotation.Bean;
 import com.kaiyikang.winter.annotation.Component;

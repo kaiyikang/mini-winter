@@ -6,6 +6,12 @@
 
 Mini Winter comes from Summer Framework, which is a simplified version based on Java Spring Framework.
 
+## Why Write This Project?
+
+After mastering the basic syntax of Java, I realized that while the highly abstracted Convention over Configuration mechanism in mainstream frameworks like Spring Boot significantly boosts development efficiency, it also acts as a black box that hides complex underlying implementation details. To make these processes transparent, I decided to learn how to build a simplified framework from the ground up.
+
+This journey not only provided me with a deep understanding of property parsing, annotation-driven bean scanning, and lifecycle management, but it also allowed me to master the underlying proxy mechanisms of AOP and the collaboration principles of Web containers. By writing the code by hand, I directly confronted and resolved core challenges found in production environments, such as circular dependencies, atomicity guarantees in declarative transactions, and class loader isolation.
+
 ## Source
 
 For reference:
